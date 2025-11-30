@@ -89,10 +89,13 @@ export async function POST(request: Request) {
         ? `${vercelProject.link.org || ''}/${vercelProject.link.repo}`.replace(/^\//, '')
         : null;
 
-      // Get latest deployment URL
+      // Get latest deployment URL and timestamp
       const latestDeployment = vercelProject.latestDeployments?.[0];
       const deploymentUrl = latestDeployment?.url
         ? `https://${latestDeployment.url}`
+        : null;
+      const lastDeploymentAt = latestDeployment?.created
+        ? new Date(latestDeployment.created)
         : null;
 
       // Try to find existing project by name or repo slug
@@ -116,6 +119,7 @@ export async function POST(request: Request) {
           .set({
             vercelProject: vercelProject.id,
             repoSlug: repoSlug || existing.repoSlug,
+            lastDeploymentAt,
             updatedAt: now
           })
           .where(eq(projects.id, existing.id));
@@ -136,6 +140,7 @@ export async function POST(request: Request) {
             repoSlug: repoSlug,
             vercelProject: vercelProject.id,
             status: 'active',
+            lastDeploymentAt,
             createdAt: now,
             updatedAt: now
           });

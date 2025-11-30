@@ -13,6 +13,7 @@ export type ViewOption = 'dashboard' | 'analysis';
 export type SortOption = 'recent' | 'status' | 'alpha';
 export type ProjectStatus = 'active' | 'redundant';
 export type ActivityType = 'commit' | 'deployment';
+export type DeploymentFilter = 'all' | 'vercel' | 'github-only';
 
 export interface Deployment {
   id: string;
@@ -44,11 +45,16 @@ export interface ProjectData {
   category: ProjectCategory;
   status: ProjectStatus;
   repoUrl: string;
+  repoSlug?: string | null;
   vercelUrl?: string;
+  vercelProject?: string | null;
+  lastDeploymentAt?: Date | null;
+  lastCommitAt?: Date | null;
   techStack: string[];
   backend?: string;
   database?: string;
   framework: string;
+  isPinned?: boolean;
   lastDeployment: Deployment;
   recentDeployments: Deployment[];
   actions: GithubAction[];

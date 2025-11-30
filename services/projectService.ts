@@ -36,6 +36,14 @@ export async function updateProjectStatus(id: string, status: ProjectStatus) {
   });
 }
 
+export async function toggleProjectPin(id: string, isPinned: boolean) {
+  await safeFetch(`${API_BASE}/projects/${id}/pin`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ isPinned })
+  });
+}
+
 export async function fetchActivity(): Promise<ActivityItem[]> {
   const res = await safeFetch(`${API_BASE}/activity`);
   if (!res) return [];

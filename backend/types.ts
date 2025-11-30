@@ -50,6 +50,7 @@ export interface ProjectData {
   backend?: string;
   database?: string;
   framework: string;
+  isPinned?: boolean;
   lastDeployment: Deployment;
   recentDeployments: Deployment[];
   actions: GithubAction[];

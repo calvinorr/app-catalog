@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ProjectData, ProjectStatus } from '../types';
-import { fetchProjects, updateProjectStatus } from '../services/projectService';
+import { fetchProjects, updateProjectStatus, toggleProjectPin } from '../services/projectService';
 
 interface UseProjectsResult {
   projects: ProjectData[];
@@ -8,6 +8,7 @@ interface UseProjectsResult {
   error: string | null;
   setProjects: React.Dispatch<React.SetStateAction<ProjectData[]>>;
   toggleStatus: (id: string) => Promise<void>;
+  togglePin: (id: string) => Promise<void>;
 }
 
 export function useProjects(): UseProjectsResult {
@@ -54,5 +55,26 @@ export function useProjects(): UseProjectsResult {
     }
   };
 
-  return { projects, loading, error, setProjects, toggleStatus };
+  const togglePin = async (id: string) => {
+    const project = projects.find((p) => p.id === id);
+    if (!project) return;
+    const nextPinned = !project.isPinned;
+
+    // Optimistic update
+    setProjects((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, isPinned: nextPinned } : p))
+    );
+
+    try {
+      await toggleProjectPin(id, nextPinned);
+    } catch (err) {
+      console.error('Failed to toggle pin; reverting.', err);
+      // Revert on error
+      setProjects((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, isPinned: project.isPinned } : p))
+      );
+    }
+  };
+
+  return { projects, loading, error, setProjects, toggleStatus, togglePin };
 }

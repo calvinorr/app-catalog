@@ -1,13 +1,16 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
-import { ProjectCategory, ProjectData, ViewOption, SortOption, ProjectStatus, DatabaseFilter } from '@/types';
+import React, { useMemo, useState, useEffect } from 'react';
+import { ProjectCategory, ProjectData, ViewOption, SortOption, ProjectStatus, DatabaseFilter, DeploymentFilter } from '@/types';
 import { AppCard } from '@/components/AppCard';
 import { AppDetails } from '@/components/AppDetails';
 import { Navigation } from '@/components/Navigation';
 import { WeeklyFocus } from '@/components/WeeklyFocus';
 import { ProjectToolbar } from '@/components/ProjectToolbar';
 import { AnalysisView } from '@/components/AnalysisView';
+import { QuickStats } from '@/components/QuickStats';
+import { Sidebar } from '@/components/Sidebar';
+import { CommandPalette } from '@/components/CommandPalette';
 import { ScrollText, GitCommit, CheckCircle, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { useProjects } from '@/hooks/useProjects';
 import { useActivity } from '@/hooks/useActivity';
@@ -19,12 +22,33 @@ export default function App() {
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
   const [frameworkFilter, setFrameworkFilter] = useState<string>('all');
   const [databaseFilter, setDatabaseFilter] = useState<DatabaseFilter>('all');
+  const [deploymentFilter, setDeploymentFilter] = useState<DeploymentFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
 
   const [selectedProject, setSelectedProject] = useState<ProjectData | null>(null);
   const { activity: globalActivity } = useActivity(projects);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  // Sidebar filter state
+  const [sidebarFilter, setSidebarFilter] = useState<{
+    type: 'overview' | 'status' | 'framework' | 'category';
+    value: string;
+  }>({ type: 'overview', value: 'all' });
+
+  // Listen for Cmd+K / Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Extract unique frameworks for filter dropdown
   const availableFrameworks = useMemo(() => {
@@ -34,6 +58,38 @@ export default function App() {
     });
     return Array.from(frameworks).sort();
   }, [projects]);
+
+  // Handle sidebar filter changes
+  const handleSidebarFilterChange = (
+    type: 'overview' | 'status' | 'framework' | 'category',
+    value: string
+  ) => {
+    setSidebarFilter({ type, value });
+
+    // Reset other filters and apply the sidebar filter
+    setSelectedCategory(ProjectCategory.All);
+    setStatusFilter('all');
+    setFrameworkFilter('all');
+    setDatabaseFilter('all');
+    setDeploymentFilter('all');
+
+    if (type === 'overview') {
+      // Show all projects
+    } else if (type === 'status') {
+      setStatusFilter(value as ProjectStatus);
+    } else if (type === 'framework') {
+      setFrameworkFilter(value);
+    } else if (type === 'category') {
+      const categoryMap: Record<string, ProjectCategory> = {
+        'Frontend': ProjectCategory.Frontend,
+        'Backend': ProjectCategory.Backend,
+        'Fullstack': ProjectCategory.Fullstack,
+        'Tooling': ProjectCategory.Tooling,
+        'Mobile': ProjectCategory.Mobile,
+      };
+      setSelectedCategory(categoryMap[value] || ProjectCategory.All);
+    }
+  };
 
   // Filter & Sort Logic
   const filteredProjects = useMemo(() => {
@@ -59,6 +115,13 @@ export default function App() {
       result = result.filter(p => p.database && p.database.trim() !== '');
     } else if (databaseFilter === 'no') {
       result = result.filter(p => !p.database || p.database.trim() === '');
+    }
+
+    // 1e. Deployment Filter
+    if (deploymentFilter === 'vercel') {
+      result = result.filter(p => p.vercelProject);
+    } else if (deploymentFilter === 'github-only') {
+      result = result.filter(p => p.repoSlug && !p.vercelProject);
     }
 
     // 2. Search Filter
@@ -89,7 +152,7 @@ export default function App() {
     });
 
     return result;
-  }, [projects, selectedCategory, statusFilter, frameworkFilter, databaseFilter, searchTerm, sortBy]);
+  }, [projects, selectedCategory, statusFilter, frameworkFilter, databaseFilter, deploymentFilter, searchTerm, sortBy]);
 
   const toggleProjectStatus = (projectId: string) => {
     toggleStatus(projectId);
@@ -116,12 +179,29 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
-      <Navigation 
-        currentView={currentView}
-        onSelectView={setCurrentView}
+      {/* Sidebar */}
+      <Sidebar
+        projects={projects}
+        activeFilter={sidebarFilter}
+        onFilterChange={handleSidebarFilterChange}
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Command Palette */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        projects={projects}
+        onSelectProject={(project) => setSelectedProject(project)}
+      />
+
+      {/* Main Content Area - adjusted for sidebar */}
+      <div className="ml-48">
+        <Navigation
+          currentView={currentView}
+          onSelectView={setCurrentView}
+        />
+
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         {currentView === 'analysis' ? (
           <AnalysisView projects={projects} />
@@ -135,6 +215,11 @@ export default function App() {
               
               {/* Main Content: Projects List */}
               <div className="lg:col-span-3">
+                <QuickStats
+                  projects={projects}
+                  onProjectClick={setSelectedProject}
+                />
+
                 <ProjectToolbar
                   searchTerm={searchTerm}
                   onSearchChange={setSearchTerm}
@@ -146,6 +231,8 @@ export default function App() {
                   onFrameworkChange={setFrameworkFilter}
                   databaseFilter={databaseFilter}
                   onDatabaseChange={setDatabaseFilter}
+                  deploymentFilter={deploymentFilter}
+                  onDeploymentChange={setDeploymentFilter}
                   availableFrameworks={availableFrameworks}
                   sortBy={sortBy}
                   onSortChange={setSortBy}
@@ -237,12 +324,13 @@ export default function App() {
             </div>
           </>
         )}
-      </main>
+        </main>
+      </div>
 
       {selectedProject && (
-        <AppDetails 
-          app={selectedProject} 
-          onClose={() => setSelectedProject(null)} 
+        <AppDetails
+          app={selectedProject}
+          onClose={() => setSelectedProject(null)}
           onToggleStatus={toggleProjectStatus}
         />
       )}

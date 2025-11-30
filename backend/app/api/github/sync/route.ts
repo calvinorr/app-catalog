@@ -16,6 +16,7 @@ interface GitHubRepo {
   private: boolean;
   fork: boolean;
   archived: boolean;
+  pushed_at: string;
 }
 
 async function fetchAllRepos(token: string): Promise<GitHubRepo[]> {
@@ -87,6 +88,9 @@ export async function POST() {
 
       const isUpdate = existing.length > 0;
 
+      // Parse pushed_at as lastCommitAt timestamp
+      const lastCommitAt = repo.pushed_at ? new Date(repo.pushed_at) : null;
+
       await db
         .insert(projects)
         .values({
@@ -100,6 +104,7 @@ export async function POST() {
           description: repo.description,
           language: repo.language,
           htmlUrl: repo.html_url,
+          lastCommitAt,
           createdAt: now,
           updatedAt: now
         })
@@ -112,6 +117,7 @@ export async function POST() {
             description: repo.description,
             language: repo.language,
             htmlUrl: repo.html_url,
+            lastCommitAt,
             updatedAt: now
           }
         });

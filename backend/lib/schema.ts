@@ -13,6 +13,9 @@ export const projects = sqliteTable(
     description: text('description'),
     language: text('language'),
     htmlUrl: text('html_url'),
+    lastDeploymentAt: integer('last_deployment_at', { mode: 'timestamp' }),
+    lastCommitAt: integer('last_commit_at', { mode: 'timestamp' }),
+    isPinned: integer('is_pinned', { mode: 'boolean' }).notNull().default(false),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull()
   },

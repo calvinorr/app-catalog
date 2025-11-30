@@ -7,12 +7,13 @@ import { Navigation } from './components/Navigation';
 import { WeeklyFocus } from './components/WeeklyFocus';
 import { ProjectToolbar } from './components/ProjectToolbar';
 import { AnalysisView } from './components/AnalysisView';
+import { PinnedPanel } from './backend/components/PinnedPanel';
 import { ScrollText, GitCommit, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useProjects } from './hooks/useProjects';
 import { useActivity } from './hooks/useActivity';
 
 export default function App() {
-  const { projects, loading, error, toggleStatus } = useProjects();
+  const { projects, loading, error, toggleStatus, togglePin } = useProjects();
   const [currentView, setCurrentView] = useState<ViewOption>('dashboard');
   const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>(ProjectCategory.All);
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
@@ -79,12 +80,12 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
-      <Navigation 
+      <Navigation
         currentView={currentView}
         onSelectView={setCurrentView}
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:pr-72">
         
         {currentView === 'analysis' ? (
           <AnalysisView projects={projects} />
@@ -117,10 +118,11 @@ export default function App() {
                   <>
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                       {filteredProjects.map(project => (
-                        <AppCard 
-                          key={project.id} 
-                          project={project} 
-                          onClick={setSelectedProject} 
+                        <AppCard
+                          key={project.id}
+                          project={project}
+                          onClick={setSelectedProject}
+                          onTogglePin={togglePin}
                         />
                       ))}
                     </div>
@@ -188,12 +190,18 @@ export default function App() {
       </main>
 
       {selectedProject && (
-        <AppDetails 
-          app={selectedProject} 
-          onClose={() => setSelectedProject(null)} 
+        <AppDetails
+          app={selectedProject}
+          onClose={() => setSelectedProject(null)}
           onToggleStatus={toggleProjectStatus}
         />
       )}
+
+      <PinnedPanel
+        projects={projects}
+        onTogglePin={togglePin}
+        onProjectClick={setSelectedProject}
+      />
     </div>
   );
 }
