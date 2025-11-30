@@ -2,6 +2,45 @@
  * Mock data for dev mode - matches API response format
  */
 
+interface ActivityPoint {
+  date: string;
+  count: number;
+  level: 0 | 1 | 2 | 3 | 4;
+  status?: 'success' | 'failed' | 'neutral';
+}
+
+// Helper to generate mock activity data
+function generateMockActivity(days: number, type: 'commit' | 'deployment'): ActivityPoint[] {
+  const points: ActivityPoint[] = [];
+  const now = new Date();
+
+  for (let i = days - 1; i >= 0; i--) {
+    const date = new Date(now);
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toISOString().split('T')[0];
+
+    // More activity in recent days
+    const recentBoost = i < 7 ? 2 : 1;
+    const hasActivity = Math.random() > 0.5;
+    const count = hasActivity ? Math.floor(Math.random() * 4 * recentBoost) : 0;
+
+    let level: 0 | 1 | 2 | 3 | 4 = 0;
+    if (count > 0) level = 1;
+    if (count >= 3) level = 2;
+    if (count >= 5) level = 3;
+    if (count >= 8) level = 4;
+
+    points.push({
+      date: dateStr,
+      count,
+      level,
+      status: type === 'deployment' ? 'neutral' : undefined,
+    });
+  }
+
+  return points;
+}
+
 export interface MockProject {
   id: string;
   name: string;
@@ -20,6 +59,8 @@ export interface MockProject {
     tags: string;
     lastScannedAt: Date;
   } | null;
+  commitActivity: ActivityPoint[];
+  deploymentActivity: ActivityPoint[];
 }
 
 export interface MockActivity {
@@ -53,7 +94,9 @@ export const MOCK_PROJECTS: MockProject[] = [
       primaryAuth: null,
       tags: JSON.stringify(['Tailwind', 'Vite']),
       lastScannedAt: now
-    }
+    },
+    commitActivity: generateMockActivity(90, 'commit'),
+    deploymentActivity: generateMockActivity(90, 'deployment')
   },
   {
     id: '2',
@@ -72,7 +115,9 @@ export const MOCK_PROJECTS: MockProject[] = [
       primaryAuth: 'NextAuth',
       tags: JSON.stringify(['TypeScript', 'Apollo']),
       lastScannedAt: now
-    }
+    },
+    commitActivity: generateMockActivity(90, 'commit'),
+    deploymentActivity: generateMockActivity(90, 'deployment')
   },
   {
     id: '3',
@@ -91,7 +136,9 @@ export const MOCK_PROJECTS: MockProject[] = [
       primaryAuth: 'Clerk',
       tags: JSON.stringify(['Turso', 'tRPC']),
       lastScannedAt: now
-    }
+    },
+    commitActivity: generateMockActivity(90, 'commit'),
+    deploymentActivity: generateMockActivity(90, 'deployment')
   },
   {
     id: '4',
@@ -110,7 +157,9 @@ export const MOCK_PROJECTS: MockProject[] = [
       primaryAuth: null,
       tags: JSON.stringify(['Three.js', 'Framer Motion']),
       lastScannedAt: now
-    }
+    },
+    commitActivity: generateMockActivity(90, 'commit'),
+    deploymentActivity: generateMockActivity(90, 'deployment')
   },
   {
     id: '5',
@@ -129,7 +178,9 @@ export const MOCK_PROJECTS: MockProject[] = [
       primaryAuth: null,
       tags: JSON.stringify(['Vue', 'Tailwind']),
       lastScannedAt: now
-    }
+    },
+    commitActivity: generateMockActivity(90, 'commit'),
+    deploymentActivity: generateMockActivity(90, 'deployment')
   },
   {
     id: '6',
@@ -148,7 +199,9 @@ export const MOCK_PROJECTS: MockProject[] = [
       primaryAuth: null,
       tags: JSON.stringify(['Rust', 'CLI']),
       lastScannedAt: now
-    }
+    },
+    commitActivity: generateMockActivity(90, 'commit'),
+    deploymentActivity: generateMockActivity(90, 'deployment')
   }
 ];
 

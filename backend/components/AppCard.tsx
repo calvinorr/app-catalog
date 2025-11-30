@@ -103,21 +103,21 @@ export const AppCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
     <div
       onClick={() => onClick(project)}
       className={`
-        group bg-white rounded-lg p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border flex flex-col h-full relative
-        ${lastDeploymentFailed ? 'border-red-200' : 'border-slate-200'}
+        group bg-slate-800 rounded-lg p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border flex flex-col h-full relative
+        ${lastDeploymentFailed ? 'border-red-500/30' : 'border-slate-700'}
       `}
     >
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-slate-900 flex items-center gap-2">
+          <h3 className="font-bold text-slate-100 flex items-center gap-2">
             {project.name}
-            {project.vercelUrl && <ArrowUpRight className="w-3 h-3 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />}
+            {project.vercelUrl && <ArrowUpRight className="w-3 h-3 text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity" />}
           </h3>
-          <p className="text-xs text-slate-500 font-mono mt-0.5">{project.category}</p>
+          <p className="text-xs text-slate-400 font-mono mt-0.5">{project.category}</p>
 
           {/* Last commit preview */}
           {project.lastDeployment?.commitMessage && (
-            <p className="text-xs text-slate-400 mt-1 flex items-center gap-1.5">
+            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
               <Clock className="w-3 h-3" />
               <span>{timeAgo(project.lastDeployment.date)}: {truncateMessage(project.lastDeployment.commitMessage)}</span>
             </p>
@@ -126,8 +126,8 @@ export const AppCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
         <div className="flex items-center gap-2 flex-shrink-0">
           <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider border ${
             project.status === 'active'
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-              : 'bg-slate-100 text-slate-500 border-slate-200'
+              ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+              : 'bg-slate-700 text-slate-400 border-slate-600'
           }`}>
             {project.status}
           </span>
@@ -135,30 +135,30 @@ export const AppCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
         </div>
       </div>
 
-      <p className="text-sm text-slate-600 line-clamp-2 mb-4 h-10">
+      <p className="text-sm text-slate-300 line-clamp-2 mb-4 h-10">
         {project.description}
       </p>
 
       <div className="flex flex-wrap gap-1.5 mb-4">
         {project.techStack.slice(0, 3).map(tech => (
-          <span key={tech} className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded border border-slate-200">
+          <span key={tech} className="px-2 py-1 bg-slate-700 text-slate-300 text-xs rounded border border-slate-600">
             {tech}
           </span>
         ))}
         {project.techStack.length > 3 && (
-          <span className="px-2 py-1 bg-slate-50 text-slate-400 text-xs rounded border border-slate-100">
+          <span className="px-2 py-1 bg-slate-900 text-slate-500 text-xs rounded border border-slate-700">
             +{project.techStack.length - 3}
           </span>
         )}
       </div>
 
       {/* Quick Actions Row */}
-      <div className="mt-auto pt-4 border-t border-slate-100 flex items-center gap-2">
+      <div className="mt-auto pt-4 border-t border-slate-700 flex items-center gap-2">
         {/* Local folder link */}
         {path && (
           <button
             onClick={(e) => handleQuickAction(e, `file://${path}`)}
-            className="flex items-center justify-center w-8 h-8 rounded hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors group/btn"
+            className="flex items-center justify-center w-8 h-8 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors group/btn"
             title={`Open local folder: ${path}`}
           >
             <FolderOpen className="w-4 h-4" />
@@ -169,7 +169,7 @@ export const AppCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
         {githubUrl && (
           <button
             onClick={(e) => handleQuickAction(e, githubUrl)}
-            className="flex items-center justify-center w-8 h-8 rounded hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors group/btn"
+            className="flex items-center justify-center w-8 h-8 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors group/btn"
             title={`Open GitHub: ${githubUrl}`}
           >
             <Github className="w-4 h-4" />
@@ -180,7 +180,7 @@ export const AppCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
         {vercelDashboardUrl && (
           <button
             onClick={(e) => handleQuickAction(e, vercelDashboardUrl)}
-            className="flex items-center justify-center w-8 h-8 rounded hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors group/btn"
+            className="flex items-center justify-center w-8 h-8 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors group/btn"
             title={`Open Vercel dashboard: ${vercelProject}`}
           >
             <ExternalLink className="w-4 h-4" />
@@ -190,7 +190,7 @@ export const AppCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
         {/* Database indicator */}
         {project.database && (
           <div
-            className="flex items-center justify-center w-8 h-8 rounded text-slate-400 cursor-help"
+            className="flex items-center justify-center w-8 h-8 rounded text-slate-500 cursor-help"
             title={`Database: ${project.database}`}
           >
             <Database className="w-4 h-4" />
@@ -198,7 +198,7 @@ export const AppCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
         )}
 
         {/* Branch info moved to right side */}
-        <div className="ml-auto flex items-center gap-1.5 text-xs text-slate-500">
+        <div className="ml-auto flex items-center gap-1.5 text-xs text-slate-400">
           <GitBranch className="w-3.5 h-3.5" />
           <span className="font-mono max-w-[80px] truncate">{project.lastDeployment?.branch || 'main'}</span>
         </div>

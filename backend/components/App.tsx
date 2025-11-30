@@ -178,7 +178,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+    <div className="min-h-screen bg-slate-950 font-sans text-slate-100">
       {/* Sidebar */}
       <Sidebar
         projects={projects}
@@ -239,24 +239,24 @@ export default function App() {
                 />
 
                 {loading ? (
-                  <div className="text-center py-20 text-slate-400">Loading projects...</div>
+                  <div className="text-center py-20 text-slate-500">Loading projects...</div>
                 ) : error ? (
-                  <div className="text-center py-20 text-red-500">Failed to load projects.</div>
+                  <div className="text-center py-20 text-red-400">Failed to load projects.</div>
                 ) : (
                   <>
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                       {filteredProjects.map(project => (
-                        <AppCard 
-                          key={project.id} 
-                          project={project} 
-                          onClick={setSelectedProject} 
+                        <AppCard
+                          key={project.id}
+                          project={project}
+                          onClick={setSelectedProject}
                         />
                       ))}
                     </div>
-                    
+
                     {filteredProjects.length === 0 && (
-                      <div className="text-center py-20 border-2 border-dashed border-slate-200 rounded-xl">
-                        <p className="text-slate-400">No projects found matching your criteria.</p>
+                      <div className="text-center py-20 border-2 border-dashed border-slate-700 rounded-xl">
+                        <p className="text-slate-500">No projects found matching your criteria.</p>
                       </div>
                     )}
                   </>
@@ -266,49 +266,49 @@ export default function App() {
 
               {/* Sidebar: Event Log */}
               <div className="hidden lg:block space-y-6">
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden sticky top-24">
-                  <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-sm overflow-hidden sticky top-24">
+                  <div className="p-4 border-b border-slate-700 bg-slate-900/50 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <ScrollText className="w-4 h-4 text-slate-500" />
-                      <h3 className="font-semibold text-slate-900 text-sm">Event Log</h3>
+                      <ScrollText className="w-4 h-4 text-slate-400" />
+                      <h3 className="font-semibold text-slate-100 text-sm">Event Log</h3>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={handleRefreshActivity}
                         disabled={isRefreshing}
-                        className="p-1.5 hover:bg-slate-200 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-1.5 hover:bg-slate-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Refresh Activity"
                       >
-                        <RefreshCw className={`w-3.5 h-3.5 text-slate-600 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        <RefreshCw className={`w-3.5 h-3.5 text-slate-400 ${isRefreshing ? 'animate-spin' : ''}`} />
                       </button>
-                      <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-mono">LIVE</span>
+                      <span className="text-[10px] bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded font-mono">LIVE</span>
                     </div>
                   </div>
-                  <div className="divide-y divide-slate-100 max-h-[600px] overflow-y-auto custom-scrollbar">
+                  <div className="divide-y divide-slate-700 max-h-[600px] overflow-y-auto custom-scrollbar">
                     {globalActivity.map((activity, i) => (
-                      <div key={i} className="p-4 hover:bg-slate-50 transition-colors group">
+                      <div key={i} className="p-4 hover:bg-slate-700/50 transition-colors group">
                         <div className="flex items-start gap-3">
                           <div className="mt-1">
-                            {activity.type === 'deployment' && <CheckCircle className="w-3.5 h-3.5 text-green-500" />}
-                            {activity.type === 'commit' && <GitCommit className="w-3.5 h-3.5 text-slate-400" />}
-                            {!activity.type && <Loader2 className="w-3.5 h-3.5 text-blue-500 animate-spin" />}
+                            {activity.type === 'deployment' && <CheckCircle className="w-3.5 h-3.5 text-green-400" />}
+                            {activity.type === 'commit' && <GitCommit className="w-3.5 h-3.5 text-slate-500" />}
+                            {!activity.type && <Loader2 className="w-3.5 h-3.5 text-blue-400 animate-spin" />}
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex justify-between items-start">
-                              <p className="text-xs font-bold text-slate-700 truncate group-hover:text-indigo-600 transition-colors cursor-pointer">
+                              <p className="text-xs font-bold text-slate-200 truncate group-hover:text-indigo-400 transition-colors cursor-pointer">
                                 {activity.projectName || 'Unknown Project'}
                               </p>
-                              <span className="text-[10px] text-slate-400 whitespace-nowrap ml-2">
+                              <span className="text-[10px] text-slate-500 whitespace-nowrap ml-2">
                                 {new Date(activity.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                               </span>
                             </div>
-                            <p className="text-xs text-slate-500 truncate mt-0.5">{activity.title}</p>
+                            <p className="text-xs text-slate-400 truncate mt-0.5">{activity.title}</p>
                             {activity.url && (
                               <a
                                 href={activity.url}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="text-[10px] text-indigo-600 font-mono underline"
+                                className="text-[10px] text-indigo-400 font-mono underline"
                               >
                                 Link
                               </a>

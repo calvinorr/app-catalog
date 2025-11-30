@@ -25,9 +25,9 @@ export const WeeklyFocus: React.FC<WeeklyFocusProps> = ({ projects }) => {
   return (
     <div className="mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
       <div className="flex items-center gap-2 mb-4">
-        <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
-        <h2 className="text-lg font-bold text-slate-900">Weekly Focus</h2>
-        <span className="text-xs text-slate-400 font-mono ml-2 border-l border-slate-300 pl-3">
+        <Zap className="w-5 h-5 text-amber-400 fill-amber-400" />
+        <h2 className="text-lg font-bold text-slate-100">Weekly Focus</h2>
+        <span className="text-xs text-slate-500 font-mono ml-2 border-l border-slate-700 pl-3">
           Projects active in the last 7 days
         </span>
       </div>
@@ -81,7 +81,7 @@ export const WeeklyFocus: React.FC<WeeklyFocusProps> = ({ projects }) => {
         })}
         
         {activeProjects.length > 3 && (
-            <div className="flex items-center justify-center bg-white border-2 border-dashed border-slate-200 rounded-xl p-5 text-slate-400 hover:text-slate-600 hover:border-slate-300 transition-colors cursor-pointer group">
+            <div className="flex items-center justify-center bg-slate-800 border-2 border-dashed border-slate-700 rounded-xl p-5 text-slate-500 hover:text-slate-300 hover:border-slate-600 transition-colors cursor-pointer group">
                 <div className="text-center">
                     <div className="font-bold text-xl group-hover:scale-110 transition-transform">+{activeProjects.length - 3}</div>
                     <div className="text-xs font-medium">more active</div>

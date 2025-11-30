@@ -54,10 +54,10 @@ export const QuickStats: React.FC<QuickStatsProps> = ({ projects, onProjectClick
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
+    <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-sm p-6 mb-6">
       <div className="flex items-center gap-2 mb-4">
-        <Clock className="w-5 h-5 text-indigo-600" />
-        <h2 className="text-lg font-bold text-slate-900">Recent Activity</h2>
+        <Clock className="w-5 h-5 text-indigo-400" />
+        <h2 className="text-lg font-bold text-slate-100">Recent Activity</h2>
       </div>
 
       <div className="space-y-3">
@@ -68,13 +68,13 @@ export const QuickStats: React.FC<QuickStatsProps> = ({ projects, onProjectClick
             <button
               key={project.id}
               onClick={() => onProjectClick(project)}
-              className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 transition-colors group border border-transparent hover:border-slate-200"
+              className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-slate-700 transition-colors group border border-transparent hover:border-slate-600"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
                   activityType === 'deploy'
-                    ? 'bg-green-50 text-green-600'
-                    : 'bg-blue-50 text-blue-600'
+                    ? 'bg-green-500/20 text-green-400'
+                    : 'bg-blue-500/20 text-blue-400'
                 }`}>
                   {activityType === 'deploy' ? (
                     <Rocket className="w-4 h-4" />
@@ -84,16 +84,16 @@ export const QuickStats: React.FC<QuickStatsProps> = ({ projects, onProjectClick
                 </div>
 
                 <div className="text-left min-w-0">
-                  <p className="font-semibold text-slate-900 text-sm truncate group-hover:text-indigo-600 transition-colors">
+                  <p className="font-semibold text-slate-100 text-sm truncate group-hover:text-indigo-400 transition-colors">
                     {project.name}
                   </p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-400">
                     {activityType === 'deploy' ? 'Deployed' : 'Committed'} {timeAgo(getLastActivityDate(project))}
                   </p>
                 </div>
               </div>
 
-              <div className="flex-shrink-0 text-xs font-medium text-slate-400 group-hover:text-indigo-600 transition-colors">
+              <div className="flex-shrink-0 text-xs font-medium text-slate-500 group-hover:text-indigo-400 transition-colors">
                 View
               </div>
             </button>
@@ -102,7 +102,7 @@ export const QuickStats: React.FC<QuickStatsProps> = ({ projects, onProjectClick
       </div>
 
       {recentProjects.length === 0 && (
-        <p className="text-center text-slate-400 text-sm py-4">
+        <p className="text-center text-slate-500 text-sm py-4">
           No recent activity
         </p>
       )}
