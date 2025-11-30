@@ -1,8 +1,10 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { X, ExternalLink, Github, Terminal, Database, Server, Clock, GitCommit, CheckCircle, XCircle, AlertCircle, TrendingUp, Layers } from 'lucide-react';
-import { ProjectData, DeploymentStatus } from '../types';
+import { ProjectData, DeploymentStatus, ActivityItem } from '../types';
 import { ActivityHeatmap } from './ActivityHeatmap';
+import { useActivity } from '../hooks/useActivity';
+import { useAggregatedActivity } from '../hooks/useAggregatedActivity';
 
 interface ProjectDetailsProps {
   app: ProjectData;
@@ -20,6 +22,23 @@ const StatusIcon = ({ status }: { status: DeploymentStatus }) => {
 };
 
 export const AppDetails: React.FC<ProjectDetailsProps> = ({ app: project, onClose, onToggleStatus }) => {
+  // Fetch real activity data
+  const { activity } = useActivity([project]);
+  const { getProjectCommits, getProjectDeployments } = useAggregatedActivity(activity, 365);
+
+  // Get activity for this specific project, fallback to mock data if empty
+  const projectCommits = useMemo(() => {
+    const commits = getProjectCommits(project.id);
+    // If no real data, fallback to mock data from project
+    return commits.some(c => c.count > 0) ? commits : project.commitActivity;
+  }, [getProjectCommits, project.id, project.commitActivity]);
+
+  const projectDeployments = useMemo(() => {
+    const deployments = getProjectDeployments(project.id);
+    // If no real data, fallback to mock data from project
+    return deployments.some(d => d.count > 0) ? deployments : project.deploymentActivity;
+  }, [getProjectDeployments, project.id, project.deploymentActivity]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       <div 
@@ -73,10 +92,10 @@ export const AppDetails: React.FC<ProjectDetailsProps> = ({ app: project, onClos
                   <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
                     <Github className="w-4 h-4" /> Commit Activity
                   </h3>
-                  <span className="text-xs font-mono text-emerald-600 font-medium">Last 90 Days</span>
+                  <span className="text-xs font-mono text-emerald-600 font-medium">Last Year</span>
                 </div>
                 <div className="flex justify-center">
-                   <ActivityHeatmap data={project.commitActivity} type="commits" weeks={20} />
+                   <ActivityHeatmap data={projectCommits} type="commits" weeks={52} />
                 </div>
               </div>
 
@@ -86,10 +105,10 @@ export const AppDetails: React.FC<ProjectDetailsProps> = ({ app: project, onClos
                   <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
                     <TrendingUp className="w-4 h-4" /> Deployment Stability
                   </h3>
-                   <span className="text-xs font-mono text-blue-600 font-medium">Health Check</span>
+                   <span className="text-xs font-mono text-blue-600 font-medium">Last Year</span>
                 </div>
                 <div className="flex justify-center">
-                   <ActivityHeatmap data={project.deploymentActivity} type="deployments" weeks={20} />
+                   <ActivityHeatmap data={projectDeployments} type="deployments" weeks={52} />
                 </div>
               </div>
             </div>

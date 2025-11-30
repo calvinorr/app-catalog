@@ -13,6 +13,7 @@ export type ViewOption = 'dashboard' | 'analysis';
 export type SortOption = 'recent' | 'status' | 'alpha';
 export type ProjectStatus = 'active' | 'redundant';
 export type ActivityType = 'commit' | 'deployment';
+export type DatabaseFilter = 'all' | 'yes' | 'no';
 
 export interface Deployment {
   id: string;

@@ -72,12 +72,33 @@ function detectTags(deps: Set<string>, configFiles: string[]): string[] {
   return Array.from(tags);
 }
 
+function detectVercelProject(projectPath: string): { projectId: string | null; orgId: string | null } {
+  const vercelProjectPath = path.join(projectPath, '.vercel', 'project.json');
+  if (!fs.existsSync(vercelProjectPath)) {
+    return { projectId: null, orgId: null };
+  }
+
+  try {
+    const vercelProjectRaw = fs.readFileSync(vercelProjectPath, 'utf-8');
+    const vercelProject = JSON.parse(vercelProjectRaw);
+    return {
+      projectId: vercelProject.projectId || null,
+      orgId: vercelProject.orgId || null
+    };
+  } catch {
+    return { projectId: null, orgId: null };
+  }
+}
+
 export function summarizeTech(deps: Set<string>, configFiles: string[], projectPath: string): TechSnapshot {
+  const vercelInfo = detectVercelProject(projectPath);
   return {
     primaryFramework: detectFramework(deps),
     primaryDB: detectDatabase(deps, configFiles, projectPath),
     primaryAuth: detectAuth(deps),
-    tags: detectTags(deps, configFiles)
+    tags: detectTags(deps, configFiles),
+    vercelProjectId: vercelInfo.projectId,
+    vercelOrgId: vercelInfo.orgId
   };
 }
 

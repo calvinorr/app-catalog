@@ -3,56 +3,37 @@ import React, { useMemo } from 'react';
 import { ProjectData } from '../types';
 import { PieChart, Server, Database, Layers, CheckCircle, XCircle } from 'lucide-react';
 import { ActivityHeatmap } from './ActivityHeatmap';
+import { useActivity } from '../hooks/useActivity';
+import { useAggregatedActivity } from '../hooks/useAggregatedActivity';
 
 interface AnalysisViewProps {
   projects: ProjectData[];
 }
 
 export const AnalysisView: React.FC<AnalysisViewProps> = ({ projects }) => {
+  // Fetch real activity data
+  const { activity } = useActivity(projects);
+  const { globalCommits } = useAggregatedActivity(activity, 365);
+
   const stats = useMemo(() => {
     // Tech Stack Calc
     const stackCounts: Record<string, number> = {};
     const dbCounts: Record<string, number> = {};
     const statusCounts = { success: 0, failed: 0, building: 0, queued: 0 };
-    
-    // Aggregated Activity
-    // Sum up activity counts for all projects for each day to create a "Global Activity" map
-    const globalCommits = new Array(90).fill(0).map((_, i) => ({
-         date: projects[0].commitActivity[i]?.date || '',
-         count: 0,
-         level: 0 as 0|1|2|3|4
-    }));
 
     projects.forEach(p => {
       // Tech
       p.techStack.forEach(t => stackCounts[t] = (stackCounts[t] || 0) + 1);
       if (p.database) dbCounts[p.database] = (dbCounts[p.database] || 0) + 1;
-      
+
       // Status
       statusCounts[p.lastDeployment.status]++;
-
-      // Activity
-      p.commitActivity.forEach((day, idx) => {
-        if (globalCommits[idx]) {
-            globalCommits[idx].count += day.count;
-        }
-      });
     });
 
-    // Recalculate levels for global
-    globalCommits.forEach(d => {
-        if (d.count === 0) d.level = 0;
-        else if (d.count <= 2) d.level = 1;
-        else if (d.count <= 5) d.level = 2;
-        else if (d.count <= 10) d.level = 3;
-        else d.level = 4;
-    });
-
-    return { 
+    return {
         stack: Object.entries(stackCounts).sort(([,a], [,b]) => b - a),
         db: Object.entries(dbCounts).sort(([,a], [,b]) => b - a),
-        status: statusCounts,
-        globalCommits
+        status: statusCounts
     };
   }, [projects]);
 
@@ -96,7 +77,7 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({ projects }) => {
                 <Layers className="w-4 h-4" /> Global Contributions
             </h3>
             <div className="flex justify-center">
-                <ActivityHeatmap data={stats.globalCommits} weeks={24} type="commits" />
+                <ActivityHeatmap data={globalCommits} weeks={52} type="commits" />
             </div>
         </div>
       </div>

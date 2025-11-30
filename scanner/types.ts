@@ -5,6 +5,8 @@ export interface TechSnapshot {
   primaryDB: string | null;
   primaryAuth: string | null;
   tags: string[];
+  vercelProjectId: string | null;
+  vercelOrgId: string | null;
 }
 
 export interface DetectedProject {

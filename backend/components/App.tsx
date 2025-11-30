@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { ProjectCategory, ProjectData, ViewOption, SortOption, ProjectStatus } from '@/types';
+import { ProjectCategory, ProjectData, ViewOption, SortOption, ProjectStatus, DatabaseFilter } from '@/types';
 import { AppCard } from '@/components/AppCard';
 import { AppDetails } from '@/components/AppDetails';
 import { Navigation } from '@/components/Navigation';
 import { WeeklyFocus } from '@/components/WeeklyFocus';
 import { ProjectToolbar } from '@/components/ProjectToolbar';
 import { AnalysisView } from '@/components/AnalysisView';
-import { ScrollText, GitCommit, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { ScrollText, GitCommit, CheckCircle, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { useProjects } from '@/hooks/useProjects';
 import { useActivity } from '@/hooks/useActivity';
 
@@ -17,11 +17,23 @@ export default function App() {
   const [currentView, setCurrentView] = useState<ViewOption>('dashboard');
   const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>(ProjectCategory.All);
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
+  const [frameworkFilter, setFrameworkFilter] = useState<string>('all');
+  const [databaseFilter, setDatabaseFilter] = useState<DatabaseFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
-  
+
   const [selectedProject, setSelectedProject] = useState<ProjectData | null>(null);
   const { activity: globalActivity } = useActivity(projects);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Extract unique frameworks for filter dropdown
+  const availableFrameworks = useMemo(() => {
+    const frameworks = new Set<string>();
+    projects.forEach(p => {
+      if (p.framework) frameworks.add(p.framework);
+    });
+    return Array.from(frameworks).sort();
+  }, [projects]);
 
   // Filter & Sort Logic
   const filteredProjects = useMemo(() => {
@@ -37,10 +49,22 @@ export default function App() {
       result = result.filter(p => p.status === statusFilter);
     }
 
+    // 1c. Framework Filter
+    if (frameworkFilter !== 'all') {
+      result = result.filter(p => p.framework === frameworkFilter);
+    }
+
+    // 1d. Database Filter
+    if (databaseFilter === 'yes') {
+      result = result.filter(p => p.database && p.database.trim() !== '');
+    } else if (databaseFilter === 'no') {
+      result = result.filter(p => !p.database || p.database.trim() === '');
+    }
+
     // 2. Search Filter
     if (searchTerm) {
       const lowerTerm = searchTerm.toLowerCase();
-      result = result.filter(p => 
+      result = result.filter(p =>
         p.name.toLowerCase().includes(lowerTerm) ||
         p.repoUrl.toLowerCase().includes(lowerTerm) ||
         p.description.toLowerCase().includes(lowerTerm) ||
@@ -65,7 +89,7 @@ export default function App() {
     });
 
     return result;
-  }, [projects, selectedCategory, statusFilter, searchTerm, sortBy]);
+  }, [projects, selectedCategory, statusFilter, frameworkFilter, databaseFilter, searchTerm, sortBy]);
 
   const toggleProjectStatus = (projectId: string) => {
     toggleStatus(projectId);
@@ -75,6 +99,18 @@ export default function App() {
         const nextStatus = updated.status === 'active' ? 'redundant' : 'active';
         setSelectedProject({ ...updated, status: nextStatus });
       }
+    }
+  };
+
+  const handleRefreshActivity = async () => {
+    setIsRefreshing(true);
+    try {
+      await fetch('/api/refresh-activity', { method: 'POST' });
+      // Reload the page to fetch fresh activity data
+      window.location.reload();
+    } catch (err) {
+      console.error('Failed to refresh activity:', err);
+      setIsRefreshing(false);
     }
   };
 
@@ -99,13 +135,18 @@ export default function App() {
               
               {/* Main Content: Projects List */}
               <div className="lg:col-span-3">
-                <ProjectToolbar 
+                <ProjectToolbar
                   searchTerm={searchTerm}
                   onSearchChange={setSearchTerm}
                   selectedCategory={selectedCategory}
                   onCategoryChange={setSelectedCategory}
                   statusFilter={statusFilter}
                   onStatusChange={setStatusFilter}
+                  frameworkFilter={frameworkFilter}
+                  onFrameworkChange={setFrameworkFilter}
+                  databaseFilter={databaseFilter}
+                  onDatabaseChange={setDatabaseFilter}
+                  availableFrameworks={availableFrameworks}
                   sortBy={sortBy}
                   onSortChange={setSortBy}
                 />
@@ -144,7 +185,17 @@ export default function App() {
                       <ScrollText className="w-4 h-4 text-slate-500" />
                       <h3 className="font-semibold text-slate-900 text-sm">Event Log</h3>
                     </div>
-                    <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-mono">LIVE</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleRefreshActivity}
+                        disabled={isRefreshing}
+                        className="p-1.5 hover:bg-slate-200 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Refresh Activity"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 text-slate-600 ${isRefreshing ? 'animate-spin' : ''}`} />
+                      </button>
+                      <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-mono">LIVE</span>
+                    </div>
                   </div>
                   <div className="divide-y divide-slate-100 max-h-[600px] overflow-y-auto custom-scrollbar">
                     {globalActivity.map((activity, i) => (

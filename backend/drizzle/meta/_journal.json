@@ -1,10 +1,12 @@
 {
+  "version": "7",
+  "dialect": "sqlite",
   "entries": [
     {
-      "idx": 1,
-      "version": "5",
-      "when": 1732980000000,
-      "tag": "0001_init",
+      "idx": 0,
+      "version": "6",
+      "when": 1764532407784,
+      "tag": "0000_lyrical_silver_surfer",
       "breakpoints": true
     }
   ]

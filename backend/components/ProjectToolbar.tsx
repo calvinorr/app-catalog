@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Search, Filter, ArrowUpDown } from 'lucide-react';
-import { ProjectCategory, SortOption, ProjectStatus } from '@/types';
+import { ProjectCategory, SortOption, ProjectStatus, DatabaseFilter } from '@/types';
 
 interface ProjectToolbarProps {
   searchTerm: string;
@@ -10,6 +10,11 @@ interface ProjectToolbarProps {
   onCategoryChange: (cat: ProjectCategory) => void;
   statusFilter: ProjectStatus | 'all';
   onStatusChange: (status: ProjectStatus | 'all') => void;
+  frameworkFilter: string;
+  onFrameworkChange: (framework: string) => void;
+  databaseFilter: DatabaseFilter;
+  onDatabaseChange: (database: DatabaseFilter) => void;
+  availableFrameworks: string[];
   sortBy: SortOption;
   onSortChange: (sort: SortOption) => void;
 }
@@ -21,6 +26,11 @@ export const ProjectToolbar: React.FC<ProjectToolbarProps> = ({
   onCategoryChange,
   statusFilter,
   onStatusChange,
+  frameworkFilter,
+  onFrameworkChange,
+  databaseFilter,
+  onDatabaseChange,
+  availableFrameworks,
   sortBy,
   onSortChange
 }) => {
@@ -63,6 +73,33 @@ export const ProjectToolbar: React.FC<ProjectToolbarProps> = ({
             <option value="all">All Statuses</option>
             <option value="active">Active</option>
             <option value="redundant">Redundant</option>
+          </select>
+        </div>
+
+        <div className="relative flex items-center">
+          <Filter className="absolute left-3 w-3.5 h-3.5 text-slate-500 pointer-events-none z-10" />
+          <select
+            value={frameworkFilter}
+            onChange={(e) => onFrameworkChange(e.target.value)}
+            className="pl-8 pr-8 py-2 text-sm bg-white border border-slate-200 rounded-lg text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none hover:bg-slate-50 transition-colors font-medium min-w-[140px]"
+          >
+            <option value="all">All Frameworks</option>
+            {availableFrameworks.map(fw => (
+              <option key={fw} value={fw}>{fw}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="relative flex items-center">
+          <Filter className="absolute left-3 w-3.5 h-3.5 text-slate-500 pointer-events-none z-10" />
+          <select
+            value={databaseFilter}
+            onChange={(e) => onDatabaseChange(e.target.value as DatabaseFilter)}
+            className="pl-8 pr-8 py-2 text-sm bg-white border border-slate-200 rounded-lg text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none hover:bg-slate-50 transition-colors font-medium min-w-[140px]"
+          >
+            <option value="all">All Databases</option>
+            <option value="yes">Has Database</option>
+            <option value="no">No Database</option>
           </select>
         </div>
 

@@ -9,12 +9,17 @@ export const projects = sqliteTable(
     repoSlug: text('repo_slug'),
     vercelProject: text('vercel_project'),
     status: text('status', { enum: ['active', 'redundant'] }).notNull().default('active'),
+    source: text('source', { enum: ['scanner', 'github'] }).default('scanner'),
+    description: text('description'),
+    language: text('language'),
+    htmlUrl: text('html_url'),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull()
   },
   (table) => ({
     pathIdx: uniqueIndex('projects_path_idx').on(table.path),
-    statusIdx: index('projects_status_idx').on(table.status)
+    statusIdx: index('projects_status_idx').on(table.status),
+    sourceIdx: index('projects_source_idx').on(table.source)
   })
 );
 

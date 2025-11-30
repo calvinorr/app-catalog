@@ -9,14 +9,17 @@ interface ActivityHeatmapProps {
   className?: string;
 }
 
-export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ 
-  data, 
-  type = 'commits', 
+export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({
+  data,
+  type = 'commits',
   weeks = 12,
-  className = '' 
+  className = ''
 }) => {
-  // Ensure we have data for the requested number of weeks (7 days * weeks)
-  const displayData = data.slice(0, weeks * 7).reverse();
+  // Take the most recent data (last N days) and reverse to show oldest to newest
+  const totalDays = weeks * 7;
+  const displayData = data.length > totalDays
+    ? data.slice(data.length - totalDays)
+    : data;
 
   // Chunk into weeks for the grid
   const weeksData: ActivityPoint[][] = [];
