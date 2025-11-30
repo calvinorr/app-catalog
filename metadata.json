@@ -1,0 +1,5 @@
+{
+  "name": "DevDash - Repo Manager",
+  "description": "Personal developer dashboard for tracking GitHub repositories, Vercel deployments, and CI/CD pipelines.",
+  "requestFramePermissions": []
+}

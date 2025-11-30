@@ -1,0 +1,29 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+*.local
+.next
+.vercel
+
+# Config with secrets
+scan-config.json
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor files
+.DS_Store
+.idea
+.vscode
+
+# Env
+.env
+.env.*
+
+# Misc
+*.log
