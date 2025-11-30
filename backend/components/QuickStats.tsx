@@ -8,30 +8,49 @@ interface QuickStatsProps {
 }
 
 export const QuickStats: React.FC<QuickStatsProps> = ({ projects, onProjectClick }) => {
-  // Get last 3 projects by most recent activity (deployment or commit)
+  // Get last 3 projects by most recent REAL activity (lastCommitAt or lastDeploymentAt)
   const recentProjects = React.useMemo(() => {
     return [...projects]
+      .filter(p => p.lastCommitAt || p.lastDeploymentAt) // Only projects with real activity
       .sort((a, b) => {
-        const aTime = new Date(a.lastDeployment.date).getTime();
-        const bTime = new Date(b.lastDeployment.date).getTime();
+        const aTime = Math.max(
+          a.lastCommitAt ? new Date(a.lastCommitAt).getTime() : 0,
+          a.lastDeploymentAt ? new Date(a.lastDeploymentAt).getTime() : 0
+        );
+        const bTime = Math.max(
+          b.lastCommitAt ? new Date(b.lastCommitAt).getTime() : 0,
+          b.lastDeploymentAt ? new Date(b.lastDeploymentAt).getTime() : 0
+        );
         return bTime - aTime;
       })
       .slice(0, 3);
   }, [projects]);
 
-  const timeAgo = (date: string) => {
+  const timeAgo = (date: Date | string | null | undefined) => {
+    if (!date) return 'Unknown';
     const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
+    if (seconds < 0) return 'Unknown';
     if (seconds < 60) return 'Just now';
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
     if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
     if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
-    return `${Math.floor(seconds / 604800)}w ago`;
+    if (seconds < 2592000) return `${Math.floor(seconds / 604800)}w ago`;
+    if (seconds < 31536000) return `${Math.floor(seconds / 2592000)}mo ago`;
+    return `${Math.floor(seconds / 31536000)}y ago`;
   };
 
   const getActivityType = (project: ProjectData): 'deploy' | 'commit' => {
-    // For now, we'll use the deployment status to determine type
-    // In a real app, you'd compare lastDeploymentAt vs lastCommitAt
-    return project.lastDeployment.status === 'success' ? 'deploy' : 'commit';
+    // Compare real timestamps to determine which was more recent
+    const commitTime = project.lastCommitAt ? new Date(project.lastCommitAt).getTime() : 0;
+    const deployTime = project.lastDeploymentAt ? new Date(project.lastDeploymentAt).getTime() : 0;
+    return deployTime > commitTime ? 'deploy' : 'commit';
+  };
+
+  const getLastActivityDate = (project: ProjectData): Date | null => {
+    const commitTime = project.lastCommitAt ? new Date(project.lastCommitAt).getTime() : 0;
+    const deployTime = project.lastDeploymentAt ? new Date(project.lastDeploymentAt).getTime() : 0;
+    if (commitTime === 0 && deployTime === 0) return null;
+    return new Date(Math.max(commitTime, deployTime));
   };
 
   return (
@@ -69,7 +88,7 @@ export const QuickStats: React.FC<QuickStatsProps> = ({ projects, onProjectClick
                     {project.name}
                   </p>
                   <p className="text-xs text-slate-500">
-                    {activityType === 'deploy' ? 'Deployed' : 'Committed'} {timeAgo(project.lastDeployment.date)}
+                    {activityType === 'deploy' ? 'Deployed' : 'Committed'} {timeAgo(getLastActivityDate(project))}
                   </p>
                 </div>
               </div>

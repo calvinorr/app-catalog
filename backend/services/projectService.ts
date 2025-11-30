@@ -16,42 +16,30 @@ async function safeFetch(input: RequestInfo | URL, init?: RequestInit) {
   }
 }
 
-// Generate placeholder activity data
-function generateActivity(days: number): ActivityPoint[] {
+// Generate empty activity data (no fake data)
+function generateEmptyActivity(days: number): ActivityPoint[] {
   const points: ActivityPoint[] = [];
   const now = new Date();
   for (let i = days; i >= 0; i--) {
     const date = new Date(now);
     date.setDate(date.getDate() - i);
-    const count = Math.random() > 0.6 ? Math.floor(Math.random() * 5) : 0;
-    let level: 0 | 1 | 2 | 3 | 4 = 0;
-    if (count > 0) level = 1;
-    if (count > 2) level = 2;
-    if (count > 4) level = 3;
-    points.push({ date: date.toISOString().split('T')[0], count, level });
+    points.push({ date: date.toISOString().split('T')[0], count: 0, level: 0 });
   }
   return points;
 }
 
-// Generate placeholder deployment
-function generateDeployment(): Deployment {
+// Create deployment from real timestamp
+function createDeploymentFromTimestamp(timestamp: Date | string | null, projectName: string): Deployment {
+  const date = timestamp ? new Date(timestamp).toISOString() : new Date(0).toISOString();
   return {
     id: `dep-${Math.random().toString(36).substr(2, 9)}`,
-    date: new Date().toISOString(),
-    commitMessage: 'Recent deployment',
+    date,
+    commitMessage: timestamp ? 'Last activity' : 'No recent activity',
     status: 'success',
     branch: 'main',
     author: 'calvinorr',
     duration: '45s'
   };
-}
-
-// Infer category from tech stack
-function inferCategory(framework: string | null, db: string | null): ProjectCategory {
-  if (db && framework) return ProjectCategory.Fullstack;
-  if (db) return ProjectCategory.Backend;
-  if (framework) return ProjectCategory.Frontend;
-  return ProjectCategory.Tooling;
 }
 
 // Transform API response to ProjectData format
@@ -62,6 +50,13 @@ interface APIProject {
   repoSlug: string | null;
   vercelProject: string | null;
   status: 'active' | 'redundant';
+  source?: 'scanner' | 'github';
+  description?: string | null;
+  language?: string | null;
+  htmlUrl?: string | null;
+  lastCommitAt?: string | Date | null;
+  lastDeploymentAt?: string | Date | null;
+  isPinned?: boolean;
   tech?: {
     primaryFramework: string | null;
     primaryDB: string | null;
@@ -75,25 +70,33 @@ function transformProject(p: APIProject): ProjectData {
   const framework = p.tech?.primaryFramework || 'Unknown';
   const techStack = [framework, p.tech?.primaryDB, p.tech?.primaryAuth, ...tags].filter(Boolean) as string[];
 
+  // Use real timestamps - prefer lastCommitAt, fallback to lastDeploymentAt
+  const lastActivityTimestamp = p.lastCommitAt || p.lastDeploymentAt || null;
+
   return {
     id: p.id,
     name: p.name,
-    description: `Project at ${p.path}`,
-    category: inferCategory(p.tech?.primaryFramework || null, p.tech?.primaryDB || null),
+    description: p.description || `Project at ${p.path}`,
+    category: ProjectCategory.All, // No auto-inference, start blank
     status: p.status,
     repoUrl: p.repoSlug ? `github.com/${p.repoSlug}` : '',
     repoSlug: p.repoSlug,
     vercelUrl: p.vercelProject ? `${p.vercelProject}.vercel.app` : undefined,
     vercelProject: p.vercelProject,
+    htmlUrl: p.htmlUrl,
+    path: p.path,
     techStack,
     framework,
     database: p.tech?.primaryDB || undefined,
     backend: p.tech?.primaryAuth || undefined,
-    lastDeployment: generateDeployment(),
-    recentDeployments: [generateDeployment()],
+    isPinned: p.isPinned || false,
+    lastCommitAt: p.lastCommitAt ? new Date(p.lastCommitAt) : null,
+    lastDeploymentAt: p.lastDeploymentAt ? new Date(p.lastDeploymentAt) : null,
+    lastDeployment: createDeploymentFromTimestamp(lastActivityTimestamp, p.name),
+    recentDeployments: [],
     actions: [],
-    commitActivity: generateActivity(90),
-    deploymentActivity: generateActivity(90)
+    commitActivity: generateEmptyActivity(90),
+    deploymentActivity: generateEmptyActivity(90)
   };
 }
 
