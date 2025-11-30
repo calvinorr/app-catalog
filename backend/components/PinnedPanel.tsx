@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pin, X } from 'lucide-react';
-import { ProjectData } from '../../types';
+import { ProjectData } from '@/types';
 
 interface PinnedPanelProps {
   projects: ProjectData[];
