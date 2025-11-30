@@ -1,8 +1,7 @@
+'use client';
+
+import App from '@/components/App';
+
 export default function Home() {
-  return (
-    <main>
-      <h1>App Catalog Backend</h1>
-      <p>API-only scaffold (see /api routes).</p>
-    </main>
-  );
+  return <App />;
 }

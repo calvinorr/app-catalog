@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
-import { db } from '../../../lib/db';
-import { projects, techStackSnapshots } from '../../../lib/schema';
+import { db } from '@/lib/db';
+import { projects, techStackSnapshots } from '@/lib/schema';
 import { eq } from 'drizzle-orm';
+
+export const dynamic = 'force-dynamic';
 
 interface IncomingProject {
   name: string;
