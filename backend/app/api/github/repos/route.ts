@@ -10,6 +10,7 @@ interface GitHubRepo {
   description: string | null;
   language: string | null;
   updated_at: string;
+  pushed_at: string;
   private: boolean;
   fork: boolean;
   archived: boolean;
@@ -76,6 +77,7 @@ export async function GET() {
         description: repo.description,
         language: repo.language,
         updated_at: repo.updated_at,
+        pushed_at: repo.pushed_at,
         private: repo.private,
         fork: repo.fork,
         archived: repo.archived
