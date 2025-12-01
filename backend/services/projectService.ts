@@ -1,4 +1,4 @@
-import { ProjectData, ProjectStatus, ActivityItem, ProjectCategory, ActivityPoint, Deployment } from '@/types';
+import { ProjectData, ProjectStatus, ProjectStage, ActivityItem, ProjectCategory, ActivityPoint, Deployment } from '@/types';
 import { MOCK_PROJECTS } from '@/data';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || '/api';
@@ -50,6 +50,7 @@ interface APIProject {
   repoSlug: string | null;
   vercelProject: string | null;
   status: 'active' | 'redundant';
+  stage?: 'final' | 'beta' | 'alpha' | 'indev' | null;
   source?: 'scanner' | 'github';
   description?: string | null;
   language?: string | null;
@@ -79,6 +80,7 @@ function transformProject(p: APIProject): ProjectData {
     description: p.description || `Project at ${p.path}`,
     category: ProjectCategory.All, // No auto-inference, start blank
     status: p.status,
+    stage: p.stage || 'indev',
     repoUrl: p.repoSlug ? `github.com/${p.repoSlug}` : '',
     repoSlug: p.repoSlug,
     vercelUrl: p.vercelProject ? `${p.vercelProject}.vercel.app` : undefined,
@@ -121,6 +123,14 @@ export async function updateProjectStatus(id: string, status: ProjectStatus) {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ status })
+  });
+}
+
+export async function updateProjectStage(id: string, stage: ProjectStage) {
+  await safeFetch(`${API_BASE}/projects/${id}/stage`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ stage })
   });
 }
 

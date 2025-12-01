@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
-import { ProjectCategory, ProjectData, ViewOption, SortOption, ProjectStatus, DatabaseFilter, SourceFilter } from '@/types';
+import { ProjectCategory, ProjectData, ViewOption, SortOption, ProjectStatus, ProjectStage, DatabaseFilter, SourceFilter } from '@/types';
 import { AppCard } from '@/components/AppCard';
 import { AppDetails } from '@/components/AppDetails';
 import { Navigation } from '@/components/Navigation';
@@ -16,7 +16,7 @@ import { useProjects } from '@/hooks/useProjects';
 import { useActivity } from '@/hooks/useActivity';
 
 export default function App() {
-  const { projects, loading, error, toggleStatus } = useProjects();
+  const { projects, loading, error, toggleStatus, updateStage } = useProjects();
   const [currentView, setCurrentView] = useState<ViewOption>('dashboard');
   const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>(ProjectCategory.All);
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
@@ -163,6 +163,13 @@ export default function App() {
         const nextStatus = updated.status === 'active' ? 'redundant' : 'active';
         setSelectedProject({ ...updated, status: nextStatus });
       }
+    }
+  };
+
+  const handleStageChange = (projectId: string, stage: ProjectStage) => {
+    updateStage(projectId, stage);
+    if (selectedProject?.id === projectId) {
+      setSelectedProject({ ...selectedProject, stage });
     }
   };
 
@@ -333,6 +340,7 @@ export default function App() {
           app={selectedProject}
           onClose={() => setSelectedProject(null)}
           onToggleStatus={toggleProjectStatus}
+          onStageChange={handleStageChange}
         />
       )}
     </div>

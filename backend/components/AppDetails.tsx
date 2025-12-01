@@ -1,13 +1,14 @@
 
 import React from 'react';
-import { X, ExternalLink, Github, Terminal, Database, Server, Clock, GitCommit, CheckCircle, XCircle, AlertCircle, TrendingUp, Layers } from 'lucide-react';
-import { ProjectData, DeploymentStatus } from '@/types';
+import { X, ExternalLink, Github, Terminal, Database, Server, Clock, GitCommit, CheckCircle, XCircle, AlertCircle, TrendingUp, Layers, ChevronDown } from 'lucide-react';
+import { ProjectData, DeploymentStatus, ProjectStage } from '@/types';
 import { ActivityHeatmap } from '@/components/ActivityHeatmap';
 
 interface ProjectDetailsProps {
   app: ProjectData;
   onClose: () => void;
   onToggleStatus: (id: string) => void;
+  onStageChange?: (id: string, stage: ProjectStage) => void;
 }
 
 const StatusIcon = ({ status }: { status: DeploymentStatus }) => {
@@ -19,7 +20,14 @@ const StatusIcon = ({ status }: { status: DeploymentStatus }) => {
   }
 };
 
-export const AppDetails: React.FC<ProjectDetailsProps> = ({ app: project, onClose, onToggleStatus }) => {
+const STAGE_OPTIONS: { value: ProjectStage; label: string; color: string }[] = [
+  { value: 'final', label: 'Final', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+  { value: 'beta', label: 'Beta', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
+  { value: 'alpha', label: 'Alpha', color: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
+  { value: 'indev', label: 'In Dev', color: 'bg-slate-500/20 text-slate-400 border-slate-500/30' },
+];
+
+export const AppDetails: React.FC<ProjectDetailsProps> = ({ app: project, onClose, onToggleStatus, onStageChange }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       <div
@@ -47,6 +55,23 @@ export const AppDetails: React.FC<ProjectDetailsProps> = ({ app: project, onClos
             <p className="text-slate-400 max-w-2xl">{project.description}</p>
           </div>
           <div className="flex items-center gap-3">
+            {/* Stage Selector */}
+            <div className="relative">
+              <select
+                value={project.stage || 'indev'}
+                onChange={(e) => onStageChange?.(project.id, e.target.value as ProjectStage)}
+                className={`appearance-none pl-3 pr-8 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border cursor-pointer transition-colors ${
+                  STAGE_OPTIONS.find(s => s.value === (project.stage || 'indev'))?.color || 'bg-slate-700 text-slate-400 border-slate-600'
+                }`}
+              >
+                {STAGE_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value} className="bg-slate-800 text-slate-200">
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none" />
+            </div>
             <button
               onClick={() => onToggleStatus(project.id)}
               className="px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"

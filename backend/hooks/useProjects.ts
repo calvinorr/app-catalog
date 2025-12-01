@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ProjectData, ProjectStatus } from '@/types';
-import { fetchProjects, updateProjectStatus } from '@/services/projectService';
+import { ProjectData, ProjectStatus, ProjectStage } from '@/types';
+import { fetchProjects, updateProjectStatus, updateProjectStage } from '@/services/projectService';
 
 interface UseProjectsResult {
   projects: ProjectData[];
@@ -8,6 +8,7 @@ interface UseProjectsResult {
   error: string | null;
   setProjects: React.Dispatch<React.SetStateAction<ProjectData[]>>;
   toggleStatus: (id: string) => Promise<void>;
+  updateStage: (id: string, stage: ProjectStage) => Promise<void>;
 }
 
 export function useProjects(): UseProjectsResult {
@@ -54,5 +55,22 @@ export function useProjects(): UseProjectsResult {
     }
   };
 
-  return { projects, loading, error, setProjects, toggleStatus };
+  const updateStage = async (id: string, stage: ProjectStage) => {
+    const project = projects.find((p) => p.id === id);
+    if (!project) return;
+    const prevStage = project.stage;
+    setProjects((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, stage } : p))
+    );
+    try {
+      await updateProjectStage(id, stage);
+    } catch (err) {
+      console.error('Failed to update stage; reverting.', err);
+      setProjects((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, stage: prevStage } : p))
+      );
+    }
+  };
+
+  return { projects, loading, error, setProjects, toggleStatus, updateStage };
 }
