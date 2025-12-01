@@ -107,11 +107,8 @@ export async function fetchProjects(): Promise<ProjectData[]> {
   if (!res) return MOCK_PROJECTS;
   try {
     const data = await res.json();
-    // If devMode flag is set, the API already returns mock data that may need transformation
-    if (data.devMode) {
-      return data.projects.map(transformProject);
-    }
-    return data.projects.map(transformProject);
+    // API already returns fully transformed ProjectData format
+    return data.projects as ProjectData[];
   } catch (err) {
     console.warn('Failed to parse projects response, using mock.', err);
     return MOCK_PROJECTS;
