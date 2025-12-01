@@ -99,21 +99,25 @@ Both apps use `@/` path alias:
 - https://backend-calvin-orrs-projects.vercel.app
 
 ### Deploying Changes
-Deploy from the `backend/` directory using CLI:
+
+**DO NOT USE `vercel --prod` CLI** - The Vercel CLI does not work correctly with this project due to rootDirectory configuration conflicts. This has been attempted multiple times and always fails.
+
+**ALWAYS deploy via Git push:**
 ```bash
-cd backend && vercel --prod --yes
+git add -A && git commit -m "your message" && git push
 ```
 
-### GitHub Auto-Deploy Setup
-If GitHub integration is needed, connect via Vercel Dashboard:
-1. Go to https://vercel.com → "backend" project → Settings → Git
-2. Connect to `calvinorr/app-catalog` repository
-3. Set **Root Directory** to `backend` (critical!)
+Pushing to `main` branch triggers automatic Vercel deployment via GitHub integration.
 
-### Common Deployment Error
-If you see "No Next.js version detected", it means Vercel is building from root instead of `backend/`. Fix by:
-1. Deploying via CLI from `backend/` directory, OR
-2. Setting Root Directory to `backend` in Vercel project settings
+### Vercel Project Configuration
+The Vercel project "backend" is configured with:
+- **Root Directory**: `backend` (set in Vercel Dashboard, NOT in local config)
+- **Framework**: Next.js
+- **Node Version**: 22.x (per package.json engines)
+
+This configuration means:
+- GitHub pushes work correctly (Vercel looks in `/backend/` from repo root)
+- CLI deploys DO NOT work (CLI applies rootDirectory on top of current directory, causing "backend/backend" path error)
 
 ### Environment Variables (Vercel)
 Ensure these are set in Vercel project settings:
