@@ -59,14 +59,19 @@ export const WeeklyFocus: React.FC<WeeklyFocusProps> = ({ projects }) => {
 
               {/* Sparkline Visualization */}
               <div className="flex items-end gap-1 h-8 mb-4">
-                {recentCommits.map((day, i) => (
-                  <div 
-                    key={i} 
-                    className="flex-1 bg-indigo-500/40 hover:bg-indigo-400 transition-colors rounded-sm min-h-[4px]"
-                    style={{ height: `${Math.max(10, Math.min(100, day.count * 20))}%` }}
-                    title={`${day.count} commits`}
-                  ></div>
-                ))}
+                {recentCommits.map((day, i) => {
+                  const height = day.count === 0 ? 0 : Math.max(15, Math.min(100, day.count * 25));
+                  return (
+                    <div
+                      key={i}
+                      className={`flex-1 transition-colors rounded-sm ${
+                        day.count > 0 ? 'bg-indigo-500/40 hover:bg-indigo-400' : 'bg-slate-700/20'
+                      }`}
+                      style={{ height: height === 0 ? '4px' : `${height}%` }}
+                      title={`${day.count} commits on ${day.date}`}
+                    ></div>
+                  );
+                })}
               </div>
 
               <div className="flex items-center justify-between pt-4 border-t border-white/10">

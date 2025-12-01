@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Search, Filter, ArrowUpDown } from 'lucide-react';
-import { ProjectCategory, SortOption, ProjectStatus, DatabaseFilter, DeploymentFilter } from '@/types';
+import { ProjectCategory, SortOption, ProjectStatus, DatabaseFilter } from '@/types';
 
 interface ProjectToolbarProps {
   searchTerm: string;
@@ -14,8 +14,6 @@ interface ProjectToolbarProps {
   onFrameworkChange: (framework: string) => void;
   databaseFilter: DatabaseFilter;
   onDatabaseChange: (database: DatabaseFilter) => void;
-  deploymentFilter: DeploymentFilter;
-  onDeploymentChange: (deployment: DeploymentFilter) => void;
   availableFrameworks: string[];
   sortBy: SortOption;
   onSortChange: (sort: SortOption) => void;
@@ -32,8 +30,6 @@ export const ProjectToolbar: React.FC<ProjectToolbarProps> = ({
   onFrameworkChange,
   databaseFilter,
   onDatabaseChange,
-  deploymentFilter,
-  onDeploymentChange,
   availableFrameworks,
   sortBy,
   onSortChange
@@ -104,19 +100,6 @@ export const ProjectToolbar: React.FC<ProjectToolbarProps> = ({
             <option value="all">All Databases</option>
             <option value="yes">Has Database</option>
             <option value="no">No Database</option>
-          </select>
-        </div>
-
-        <div className="relative flex items-center">
-          <Filter className="absolute left-3 w-3.5 h-3.5 text-slate-400 pointer-events-none z-10" />
-          <select
-            value={deploymentFilter}
-            onChange={(e) => onDeploymentChange(e.target.value as DeploymentFilter)}
-            className="pl-8 pr-8 py-2 text-sm bg-slate-700 border border-slate-600 rounded-lg text-slate-200 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none hover:bg-slate-600 transition-colors font-medium min-w-[160px]"
-          >
-            <option value="all">All Projects</option>
-            <option value="vercel">Vercel Deployed</option>
-            <option value="github-only">GitHub Only</option>
           </select>
         </div>
 

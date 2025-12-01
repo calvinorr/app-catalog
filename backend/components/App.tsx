@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
-import { ProjectCategory, ProjectData, ViewOption, SortOption, ProjectStatus, DatabaseFilter, DeploymentFilter } from '@/types';
+import { ProjectCategory, ProjectData, ViewOption, SortOption, ProjectStatus, DatabaseFilter, SourceFilter } from '@/types';
 import { AppCard } from '@/components/AppCard';
 import { AppDetails } from '@/components/AppDetails';
 import { Navigation } from '@/components/Navigation';
@@ -22,7 +22,7 @@ export default function App() {
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
   const [frameworkFilter, setFrameworkFilter] = useState<string>('all');
   const [databaseFilter, setDatabaseFilter] = useState<DatabaseFilter>('all');
-  const [deploymentFilter, setDeploymentFilter] = useState<DeploymentFilter>('all');
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
 
@@ -71,7 +71,6 @@ export default function App() {
     setStatusFilter('all');
     setFrameworkFilter('all');
     setDatabaseFilter('all');
-    setDeploymentFilter('all');
 
     if (type === 'overview') {
       // Show all projects
@@ -95,6 +94,15 @@ export default function App() {
   const filteredProjects = useMemo(() => {
     let result = projects;
 
+    // 0. Source Filter (Global - applies first)
+    if (sourceFilter === 'github') {
+      // Show only projects with GitHub repo but NO Vercel deployment
+      result = result.filter(p => p.repoSlug && !p.vercelProject);
+    } else if (sourceFilter === 'vercel') {
+      // Show only projects WITH Vercel deployment
+      result = result.filter(p => p.vercelProject);
+    }
+
     // 1. Category Filter
     if (selectedCategory !== ProjectCategory.All) {
       result = result.filter(p => p.category === selectedCategory);
@@ -115,13 +123,6 @@ export default function App() {
       result = result.filter(p => p.database && p.database.trim() !== '');
     } else if (databaseFilter === 'no') {
       result = result.filter(p => !p.database || p.database.trim() === '');
-    }
-
-    // 1e. Deployment Filter
-    if (deploymentFilter === 'vercel') {
-      result = result.filter(p => p.vercelProject);
-    } else if (deploymentFilter === 'github-only') {
-      result = result.filter(p => p.repoSlug && !p.vercelProject);
     }
 
     // 2. Search Filter
@@ -152,7 +153,7 @@ export default function App() {
     });
 
     return result;
-  }, [projects, selectedCategory, statusFilter, frameworkFilter, databaseFilter, deploymentFilter, searchTerm, sortBy]);
+  }, [projects, selectedCategory, statusFilter, frameworkFilter, databaseFilter, sourceFilter, searchTerm, sortBy]);
 
   const toggleProjectStatus = (projectId: string) => {
     toggleStatus(projectId);
@@ -199,6 +200,8 @@ export default function App() {
         <Navigation
           currentView={currentView}
           onSelectView={setCurrentView}
+          sourceFilter={sourceFilter}
+          onSourceFilterChange={setSourceFilter}
         />
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -209,14 +212,14 @@ export default function App() {
           /* Dashboard View */
           <>
             {/* Top Section: Focus */}
-            <WeeklyFocus projects={projects} />
+            <WeeklyFocus projects={filteredProjects} onProjectClick={setSelectedProject} />
             
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mt-8">
               
               {/* Main Content: Projects List */}
               <div className="lg:col-span-3">
                 <QuickStats
-                  projects={projects}
+                  projects={filteredProjects}
                   onProjectClick={setSelectedProject}
                 />
 
@@ -231,8 +234,6 @@ export default function App() {
                   onFrameworkChange={setFrameworkFilter}
                   databaseFilter={databaseFilter}
                   onDatabaseChange={setDatabaseFilter}
-                  deploymentFilter={deploymentFilter}
-                  onDeploymentChange={setDeploymentFilter}
                   availableFrameworks={availableFrameworks}
                   sortBy={sortBy}
                   onSortChange={setSortBy}

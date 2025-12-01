@@ -15,6 +15,13 @@
       "when": 1764533128044,
       "tag": "0001_zippy_raider",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1764576609216,
+      "tag": "0002_simple_ezekiel",
+      "breakpoints": true
     }
   ]
 }

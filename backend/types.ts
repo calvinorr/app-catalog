@@ -12,9 +12,11 @@ export type DeploymentStatus = 'success' | 'failed' | 'building' | 'queued';
 export type ViewOption = 'dashboard' | 'analysis';
 export type SortOption = 'recent' | 'status' | 'alpha';
 export type ProjectStatus = 'active' | 'redundant';
+export type ProjectStage = 'final' | 'beta' | 'alpha' | 'indev';
 export type ActivityType = 'commit' | 'deployment';
 export type DatabaseFilter = 'all' | 'yes' | 'no';
 export type DeploymentFilter = 'all' | 'vercel' | 'github-only';
+export type SourceFilter = 'all' | 'github' | 'vercel';
 
 export interface Deployment {
   id: string;
@@ -45,6 +47,7 @@ export interface ProjectData {
   description: string;
   category: ProjectCategory;
   status: ProjectStatus;
+  stage?: ProjectStage | null;
   repoUrl: string;
   vercelUrl?: string;
   techStack: string[];

@@ -146,6 +146,7 @@ export function transformProject(
     description: project.description || `A ${category.toLowerCase()} project`,
     category,
     status: project.status,
+    stage: project.stage,
     repoUrl: project.htmlUrl || (project.repoSlug ? `https://github.com/${project.repoSlug}` : ''),
     repoSlug: project.repoSlug,
     vercelUrl: project.vercelProject ? `https://${project.vercelProject}.vercel.app` : undefined,

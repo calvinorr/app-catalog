@@ -40,35 +40,79 @@ function parseDependencies(pkg: any): string[] {
 }
 
 function detectFramework(deps: Set<string>): string | null {
+  // Check Next.js first as it includes React
   if (deps.has('next')) return 'Next.js';
+  // Check Vite before React as many Vite projects also have React
   if (deps.has('vite')) return 'Vite';
+  // Fallback to React if no other framework detected
   if (deps.has('react')) return 'React';
   return null;
 }
 
 function detectDatabase(deps: Set<string>, configFiles: string[], projectPath: string): string | null {
+  // Check Prisma
   if (deps.has('@prisma/client') || deps.has('prisma')) return 'Prisma';
-  if (deps.has('convex')) return 'Convex';
+  // Check Drizzle ORM (can be used with various databases)
+  if (deps.has('drizzle-orm')) {
+    // If both Drizzle and Turso, prefer "Drizzle + Turso"
+    if (deps.has('@libsql/client') || deps.has('@turso/client')) return 'Drizzle + Turso';
+    return 'Drizzle ORM';
+  }
+  // Check Turso standalone
   if (deps.has('@libsql/client') || deps.has('@turso/client')) return 'Turso';
+  // Check Supabase
+  if (deps.has('@supabase/supabase-js') || deps.has('@supabase/auth-helpers-nextjs')) return 'Supabase';
+  // Check Convex
+  if (deps.has('convex')) return 'Convex';
+  // Check PocketBase
   if (deps.has('pocketbase') || configFiles.includes('pb_data') || fs.existsSync(path.join(projectPath, 'pb_data'))) return 'PocketBase';
-  if (deps.has('drizzle-orm')) return 'Drizzle ORM';
   return null;
 }
 
 function detectAuth(deps: Set<string>): string | null {
-  if (deps.has('next-auth')) return 'NextAuth';
+  // Check NextAuth (also covers next-auth v5 / Auth.js)
+  if (deps.has('next-auth') || deps.has('auth')) return 'NextAuth';
+  // Check Clerk
   if ([...deps].some((d) => d.startsWith('@clerk/'))) return 'Clerk';
-  if (deps.has('lucia')) return 'Lucia';
+  // Check Lucia
+  if (deps.has('lucia') || deps.has('lucia-auth')) return 'Lucia';
+  // Check Supabase Auth
+  if (deps.has('@supabase/supabase-js') || deps.has('@supabase/auth-helpers-nextjs')) return 'Supabase Auth';
   return null;
 }
 
 function detectTags(deps: Set<string>, configFiles: string[]): string[] {
   const tags = new Set<string>();
-  if ([...deps].some((d) => d.startsWith('@radix-ui/')) || [...deps].some((d) => d.includes('shadcn'))) tags.add('shadcn/ui');
+
+  // UI Libraries
+  if ([...deps].some((d) => d.startsWith('@radix-ui/')) || [...deps].some((d) => d.includes('shadcn'))) {
+    tags.add('shadcn/ui');
+  }
   if ([...deps].some((d) => d.startsWith('@mui/'))) tags.add('Material UI');
-  if (deps.has('tailwindcss') || configFiles.some((c) => c.startsWith('tailwind.config'))) tags.add('Tailwind');
-  if (deps.has('trpc') || deps.has('@trpc/server')) tags.add('tRPC');
-  if (deps.has('@tanstack/react-query')) tags.add('React Query');
+
+  // CSS/Styling
+  if (deps.has('tailwindcss') || configFiles.some((c) => c.startsWith('tailwind.config'))) {
+    tags.add('Tailwind');
+  }
+
+  // API/Data fetching
+  if (deps.has('trpc') || deps.has('@trpc/server') || deps.has('@trpc/client')) tags.add('tRPC');
+  if (deps.has('@tanstack/react-query') || deps.has('react-query')) tags.add('React Query');
+
+  // State Management
+  if (deps.has('zustand')) tags.add('Zustand');
+  if (deps.has('redux') || deps.has('@reduxjs/toolkit')) tags.add('Redux');
+  if (deps.has('jotai')) tags.add('Jotai');
+  if (deps.has('recoil')) tags.add('Recoil');
+
+  // Testing
+  if (deps.has('vitest')) tags.add('Vitest');
+  if (deps.has('jest')) tags.add('Jest');
+  if (deps.has('@playwright/test')) tags.add('Playwright');
+
+  // TypeScript
+  if (deps.has('typescript')) tags.add('TypeScript');
+
   return Array.from(tags);
 }
 
