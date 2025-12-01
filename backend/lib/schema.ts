@@ -33,6 +33,7 @@ export const techStackSnapshots = sqliteTable(
     id: text('id').primaryKey(),
     projectId: text('project_id').notNull().references(() => projects.id),
     primaryFramework: text('primary_framework'),
+    backendFramework: text('backend_framework'),
     primaryDB: text('primary_db'),
     primaryAuth: text('primary_auth'),
     tags: text('tags'), // JSON string array

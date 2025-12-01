@@ -2,6 +2,7 @@ export type ProjectStatus = 'active' | 'redundant';
 
 export interface TechSnapshot {
   primaryFramework: string | null;
+  backendFramework: string | null;
   primaryDB: string | null;
   primaryAuth: string | null;
   tags: string[];

@@ -103,49 +103,138 @@ function humanizeProjectName(name: string): string {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-function inferCategory(framework: string | null, tags: string[], language: string | null = null): string {
-  // If we have a framework, use framework-based inference
+// Framework category mappings
+const FULLSTACK_FRAMEWORKS = ['next.js', 'nextjs', 'nuxt', 'remix', 'sveltekit', 'astro'];
+const FRONTEND_FRAMEWORKS = ['react', 'vue', 'vite', 'svelte', 'angular'];
+const BACKEND_FRAMEWORKS = ['express', 'fastify', 'hono', 'nestjs', 'koa', 'elysia'];
+const MOBILE_FRAMEWORKS = ['react native', 'expo'];
+
+function inferCategory(
+  framework: string | null,
+  backendFramework: string | null,
+  tags: string[],
+  language: string | null = null
+): string {
+  const lowerTags = tags.map(t => t.toLowerCase());
+
+  // Tag-based overrides (highest priority)
+  if (lowerTags.some(t => ['cli', 'tooling', 'script', 'automation', 'devtool'].includes(t))) {
+    return 'Tooling';
+  }
+  if (lowerTags.some(t => ['mobile', 'ios', 'android', 'react-native'].includes(t))) {
+    return 'Mobile';
+  }
+
+  // Check for mobile frameworks
+  if (framework) {
+    const lowerFW = framework.toLowerCase();
+    if (MOBILE_FRAMEWORKS.some(m => lowerFW.includes(m))) {
+      return 'Mobile';
+    }
+  }
+
+  // If we have both frontend and backend frameworks -> Fullstack
+  if (framework && backendFramework) {
+    return 'Fullstack';
+  }
+
+  // If we only have a backend framework -> Backend
+  if (backendFramework && !framework) {
+    const lowerBackend = backendFramework.toLowerCase();
+    if (BACKEND_FRAMEWORKS.some(b => lowerBackend.includes(b))) {
+      return 'Backend';
+    }
+  }
+
+  // If we have a frontend framework, use framework-based inference
   if (framework) {
     const lowerFramework = framework.toLowerCase();
-    const lowerTags = tags.map(t => t.toLowerCase());
 
-    if (lowerFramework.includes('next.js') || lowerFramework.includes('nextjs')) {
+    // Check fullstack frameworks
+    if (FULLSTACK_FRAMEWORKS.some(f => lowerFramework.includes(f))) {
       return 'Fullstack';
     }
-    if (lowerFramework.includes('react') || lowerFramework.includes('vue') || lowerFramework.includes('vite') || lowerFramework.includes('svelte')) {
+
+    // Check frontend frameworks
+    if (FRONTEND_FRAMEWORKS.some(f => lowerFramework.includes(f))) {
       return 'Frontend';
     }
-    if (lowerFramework.includes('express') || lowerFramework.includes('fastify') || lowerFramework.includes('hono')) {
-      return 'Backend';
-    }
-    if (lowerTags.includes('api') || lowerTags.includes('backend')) {
-      return 'Backend';
-    }
+  }
 
-    return 'Fullstack';
+  // Tag-based fallbacks
+  if (lowerTags.some(t => ['api', 'graphql', 'rest', 'server', 'backend'].includes(t))) {
+    return 'Backend';
   }
 
   // No framework detected - fall back to language-based inference
   return inferCategoryFromLanguage(language);
 }
 
+// Pattern keywords for project type inference
+const PROJECT_TYPE_PATTERNS: Record<string, string> = {
+  'api': 'API service',
+  'cli': 'CLI tool',
+  'dashboard': 'Dashboard application',
+  'admin': 'Admin panel',
+  'auth': 'Authentication service',
+  'chat': 'Chat application',
+  'bot': 'Bot application',
+  'cms': 'Content management system',
+  'ecom': 'E-commerce application',
+  'shop': 'E-commerce application',
+  'blog': 'Blog platform',
+  'portfolio': 'Portfolio site',
+  'landing': 'Landing page',
+  'docs': 'Documentation site',
+  'ui': 'UI component library',
+  'lib': 'Library',
+  'sdk': 'SDK',
+  'template': 'Project template',
+  'starter': 'Starter kit',
+  'boilerplate': 'Project boilerplate',
+};
+
+function inferProjectType(name: string): string | null {
+  const lowerName = name.toLowerCase();
+  for (const [pattern, type] of Object.entries(PROJECT_TYPE_PATTERNS)) {
+    if (lowerName.includes(pattern)) {
+      return type;
+    }
+  }
+  return null;
+}
+
 function generateDescription(
   project: DBProject,
   framework: string | null,
+  backendFramework: string | null,
   database: string | null,
   category: string
 ): string {
   // If project has a description, use it
   if (project.description) return project.description;
 
-  // Build contextual description
   const humanName = humanizeProjectName(project.name);
+  const projectType = inferProjectType(project.name);
 
-  // If we have tech info, include it
+  // Build tech parts
   const techParts: string[] = [];
   if (framework) techParts.push(framework);
+  if (backendFramework) techParts.push(backendFramework);
   if (database) techParts.push(database);
 
+  // If we have a detected project type, use a more descriptive format
+  if (projectType) {
+    if (techParts.length > 0) {
+      return `${projectType} built with ${techParts.join(' and ')}`;
+    }
+    if (project.language) {
+      return `${projectType} built with ${project.language}`;
+    }
+    return projectType;
+  }
+
+  // If we have tech info, include it
   if (techParts.length > 0) {
     return `${humanName} - ${techParts.join(' + ')} project`;
   }
@@ -167,11 +256,13 @@ export function transformProject(
   recentActivityItems: DBActivity[]
 ): any {
   const tags = tech?.tags ? JSON.parse(tech.tags) : [];
-  const category = inferCategory(tech?.primaryFramework || null, tags, project.language);
+  const backendFramework = tech?.backendFramework || null;
+  const category = inferCategory(tech?.primaryFramework || null, backendFramework, tags, project.language);
 
   // Build tech stack array
   const techStack: string[] = [];
   if (tech?.primaryFramework) techStack.push(tech.primaryFramework);
+  if (tech?.backendFramework) techStack.push(tech.backendFramework);
   if (tech?.primaryDB) techStack.push(tech.primaryDB);
   if (tech?.primaryAuth) techStack.push(tech.primaryAuth);
   tags.forEach((tag: string) => {
@@ -209,7 +300,7 @@ export function transformProject(
 
   const framework = tech?.primaryFramework || project.language || null;
   const database = tech?.primaryDB || null;
-  const description = generateDescription(project, framework, database, category);
+  const description = generateDescription(project, framework, backendFramework, database, category);
 
   return {
     id: project.id,

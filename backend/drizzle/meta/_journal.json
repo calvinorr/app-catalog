@@ -22,6 +22,13 @@
       "when": 1764576609216,
       "tag": "0002_simple_ezekiel",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1764624048397,
+      "tag": "0003_sudden_greymalkin",
+      "breakpoints": true
     }
   ]
 }

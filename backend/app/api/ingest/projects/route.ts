@@ -16,6 +16,7 @@ interface IncomingProject {
   status: 'active' | 'redundant';
   tech: {
     primaryFramework: string | null;
+    backendFramework: string | null;
     primaryDB: string | null;
     primaryAuth: string | null;
     tags: string[];
@@ -62,6 +63,7 @@ export async function POST(request: Request) {
         id: crypto.randomUUID(),
         projectId,
         primaryFramework: project.tech.primaryFramework,
+        backendFramework: project.tech.backendFramework,
         primaryDB: project.tech.primaryDB,
         primaryAuth: project.tech.primaryAuth,
         tags: JSON.stringify(project.tech.tags || []),
@@ -71,6 +73,7 @@ export async function POST(request: Request) {
         target: techStackSnapshots.projectId,
         set: {
           primaryFramework: project.tech.primaryFramework,
+          backendFramework: project.tech.backendFramework,
           primaryDB: project.tech.primaryDB,
           primaryAuth: project.tech.primaryAuth,
           tags: JSON.stringify(project.tech.tags || []),

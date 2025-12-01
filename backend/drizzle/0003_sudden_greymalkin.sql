@@ -1,0 +1,1 @@
+ALTER TABLE `tech_stack_snapshots` ADD `backend_framework` text;

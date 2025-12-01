@@ -40,12 +40,32 @@ function parseDependencies(pkg: any): string[] {
 }
 
 function detectFramework(deps: Set<string>): string | null {
-  // Check Next.js first as it includes React
+  // Meta-frameworks (highest priority - they include base frameworks)
   if (deps.has('next')) return 'Next.js';
-  // Check Vite before React as many Vite projects also have React
+  if (deps.has('nuxt')) return 'Nuxt';
+  if (deps.has('@remix-run/react') || deps.has('@remix-run/node')) return 'Remix';
+  if (deps.has('@sveltejs/kit')) return 'SvelteKit';
+  if (deps.has('astro')) return 'Astro';
+
+  // Build tools / bundlers (check before base frameworks)
   if (deps.has('vite')) return 'Vite';
-  // Fallback to React if no other framework detected
+
+  // Base frontend frameworks
+  if (deps.has('vue')) return 'Vue';
+  if (deps.has('svelte')) return 'Svelte';
+  if (deps.has('@angular/core')) return 'Angular';
   if (deps.has('react')) return 'React';
+
+  return null;
+}
+
+function detectBackendFramework(deps: Set<string>): string | null {
+  if (deps.has('express')) return 'Express';
+  if (deps.has('fastify')) return 'Fastify';
+  if (deps.has('hono')) return 'Hono';
+  if (deps.has('@nestjs/core')) return 'NestJS';
+  if (deps.has('koa')) return 'Koa';
+  if (deps.has('elysia')) return 'Elysia';
   return null;
 }
 
@@ -138,6 +158,7 @@ export function summarizeTech(deps: Set<string>, configFiles: string[], projectP
   const vercelInfo = detectVercelProject(projectPath);
   return {
     primaryFramework: detectFramework(deps),
+    backendFramework: detectBackendFramework(deps),
     primaryDB: detectDatabase(deps, configFiles, projectPath),
     primaryAuth: detectAuth(deps),
     tags: detectTags(deps, configFiles),
