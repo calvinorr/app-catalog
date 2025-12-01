@@ -60,8 +60,11 @@ export const AppDetails: React.FC<ProjectDetailsProps> = ({ app: project, onClos
               <select
                 value={project.stage || 'indev'}
                 onChange={(e) => onStageChange?.(project.id, e.target.value as ProjectStage)}
-                className={`appearance-none pl-3 pr-8 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border cursor-pointer transition-colors ${
-                  STAGE_OPTIONS.find(s => s.value === (project.stage || 'indev'))?.color || 'bg-slate-700 text-slate-400 border-slate-600'
+                className={`appearance-none pl-3 pr-8 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border cursor-pointer transition-colors bg-slate-800 ${
+                  project.stage === 'final' ? 'text-emerald-400 border-emerald-500/50' :
+                  project.stage === 'beta' ? 'text-amber-400 border-amber-500/50' :
+                  project.stage === 'alpha' ? 'text-purple-400 border-purple-500/50' :
+                  'text-slate-300 border-slate-600'
                 }`}
               >
                 {STAGE_OPTIONS.map(option => (
@@ -70,7 +73,7 @@ export const AppDetails: React.FC<ProjectDetailsProps> = ({ app: project, onClos
                   </option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none" />
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none text-slate-400" />
             </div>
             <button
               onClick={() => onToggleStatus(project.id)}

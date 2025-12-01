@@ -26,24 +26,24 @@ const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const VERCEL_TOKEN = process.env.VERCEL_TOKEN;
 const VERCEL_TEAM = process.env.VERCEL_TEAM;
 
-async function fetchLatestCommit(repoSlug: string): Promise<CommitResult | null> {
-  if (!GITHUB_TOKEN) return null;
-  const res = await fetch(`https://api.github.com/repos/${repoSlug}/commits?per_page=1`, {
+async function fetchCommits(repoSlug: string, count = 100): Promise<CommitResult[]> {
+  if (!GITHUB_TOKEN) return [];
+  const res = await fetch(`https://api.github.com/repos/${repoSlug}/commits?per_page=${count}`, {
     headers: {
       Authorization: `Bearer ${GITHUB_TOKEN}`,
       Accept: 'application/vnd.github+json'
     }
   });
-  if (!res.ok) return null;
+  if (!res.ok) return [];
   const data = (await res.json()) as CommitResult[];
-  return data[0] || null;
+  return data || [];
 }
 
-async function fetchLatestDeployment(vercelProject: string): Promise<VercelDeployment | null> {
-  if (!VERCEL_TOKEN) return null;
+async function fetchDeployments(vercelProject: string, count = 50): Promise<VercelDeployment[]> {
+  if (!VERCEL_TOKEN) return [];
   const params = new URLSearchParams({
     app: vercelProject,
-    limit: '1'
+    limit: String(count)
   });
   if (VERCEL_TEAM) params.append('teamId', VERCEL_TEAM);
 
@@ -52,9 +52,9 @@ async function fetchLatestDeployment(vercelProject: string): Promise<VercelDeplo
       Authorization: `Bearer ${VERCEL_TOKEN}`
     }
   });
-  if (!res.ok) return null;
+  if (!res.ok) return [];
   const data = await res.json();
-  return (data.deployments && data.deployments[0]) || null;
+  return data.deployments || [];
 }
 
 export async function POST() {
@@ -63,53 +63,44 @@ export async function POST() {
   const now = new Date();
 
   for (const project of list) {
-    // GitHub
+    // GitHub - fetch last 100 commits
     if (project.repoSlug) {
       try {
-        const commit = await fetchLatestCommit(project.repoSlug);
-        if (commit) {
+        const commits = await fetchCommits(project.repoSlug, 100);
+        for (const commit of commits) {
+          // Use SHA in ID to allow multiple commits per project
           await db
             .insert(activityItems)
             .values({
-              id: `${project.id}-commit`,
+              id: `${project.id}-commit-${commit.sha.substring(0, 8)}`,
               projectId: project.id,
               type: 'commit',
               timestamp: new Date(commit.commit.author.date),
-              title: commit.commit.message,
+              title: commit.commit.message.split('\n')[0], // First line only
               url: commit.html_url,
               metadata: JSON.stringify({
                 sha: commit.sha,
                 author: commit.commit.author.name
               })
             })
-            .onConflictDoUpdate({
-              target: activityItems.id,
-              set: {
-                timestamp: new Date(commit.commit.author.date),
-                title: commit.commit.message,
-                url: commit.html_url,
-                metadata: JSON.stringify({
-                  sha: commit.sha,
-                  author: commit.commit.author.name
-                })
-              }
-            });
+            .onConflictDoNothing(); // Preserve existing, don't update
           updated++;
         }
       } catch (err) {
-        console.error('GitHub refresh failed', err);
+        console.error('GitHub refresh failed for', project.repoSlug, err);
       }
     }
 
-    // Vercel
+    // Vercel - fetch last 50 deployments
     if (project.vercelProject) {
       try {
-        const deploy = await fetchLatestDeployment(project.vercelProject);
-        if (deploy) {
+        const deployments = await fetchDeployments(project.vercelProject, 50);
+        for (const deploy of deployments) {
+          // Use UID in ID to allow multiple deployments per project
           await db
             .insert(activityItems)
             .values({
-              id: `${project.id}-deploy`,
+              id: `${project.id}-deploy-${deploy.uid.substring(0, 8)}`,
               projectId: project.id,
               type: 'deployment',
               timestamp: new Date(deploy.createdAt),
@@ -120,22 +111,11 @@ export async function POST() {
                 state: deploy.state
               })
             })
-            .onConflictDoUpdate({
-              target: activityItems.id,
-              set: {
-                timestamp: new Date(deploy.createdAt),
-                title: `Deployment ${deploy.state}`,
-                url: `https://${deploy.url}`,
-                metadata: JSON.stringify({
-                  uid: deploy.uid,
-                  state: deploy.state
-                })
-              }
-            });
+            .onConflictDoNothing(); // Preserve existing
           updated++;
         }
       } catch (err) {
-        console.error('Vercel refresh failed', err);
+        console.error('Vercel refresh failed for', project.vercelProject, err);
       }
     }
   }
