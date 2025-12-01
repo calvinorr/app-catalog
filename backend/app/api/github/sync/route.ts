@@ -79,10 +79,20 @@ function detectTags(deps: Record<string, string>): string[] {
   return tags;
 }
 
-async function fetchPackageJson(repoSlug: string, token: string): Promise<PackageJson | null> {
+// DevDash manifest file structure
+interface DevDashManifest {
+  name?: string;
+  description?: string;
+  category?: string;
+  database?: string;
+  framework?: string;
+  tags?: string[];
+}
+
+async function fetchFileFromGitHub(repoSlug: string, path: string, token: string): Promise<string | null> {
   try {
     const response = await fetch(
-      `https://api.github.com/repos/${repoSlug}/contents/package.json`,
+      `https://api.github.com/repos/${repoSlug}/contents/${path}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -97,11 +107,46 @@ async function fetchPackageJson(repoSlug: string, token: string): Promise<Packag
     if (!data.content) return null;
 
     // Decode base64 content
-    const content = Buffer.from(data.content, 'base64').toString('utf-8');
+    return Buffer.from(data.content, 'base64').toString('utf-8');
+  } catch {
+    return null;
+  }
+}
+
+async function fetchDevDashManifest(repoSlug: string, token: string): Promise<DevDashManifest | null> {
+  const content = await fetchFileFromGitHub(repoSlug, '.devdash.json', token);
+  if (!content) return null;
+
+  try {
     return JSON.parse(content);
   } catch {
     return null;
   }
+}
+
+// Paths to check for package.json in monorepos
+const PACKAGE_JSON_PATHS = [
+  'package.json',
+  'frontend/package.json',
+  'app/package.json',
+  'web/package.json',
+  'client/package.json',
+  'src/package.json'
+];
+
+async function fetchPackageJson(repoSlug: string, token: string): Promise<PackageJson | null> {
+  // Try each path in order until we find a package.json
+  for (const path of PACKAGE_JSON_PATHS) {
+    const content = await fetchFileFromGitHub(repoSlug, path, token);
+    if (content) {
+      try {
+        return JSON.parse(content);
+      } catch {
+        continue;
+      }
+    }
+  }
+  return null;
 }
 
 interface GitHubRepo {
@@ -227,9 +272,17 @@ export async function POST() {
         insertedCount++;
       }
 
-      // Detect tech stack from package.json
+      // Check for .devdash.json manifest (overrides auto-detection)
       const projectId = isUpdate ? existing[0].id : id;
+      const manifest = await fetchDevDashManifest(repo.full_name, token);
+
+      // Auto-detect tech stack from package.json
       const packageJson = await fetchPackageJson(repo.full_name, token);
+
+      let framework: string | null = null;
+      let database: string | null = null;
+      let auth: string | null = null;
+      let tags: string[] = [];
 
       if (packageJson) {
         const allDeps = {
@@ -237,35 +290,50 @@ export async function POST() {
           ...packageJson.devDependencies
         };
 
-        const framework = detectFramework(allDeps);
-        const database = detectDatabase(allDeps);
-        const auth = detectAuth(allDeps);
-        const tags = detectTags(allDeps);
+        framework = detectFramework(allDeps);
+        database = detectDatabase(allDeps);
+        auth = detectAuth(allDeps);
+        tags = detectTags(allDeps);
+      }
 
-        // Only create tech snapshot if we detected something
-        if (framework || database || auth || tags.length > 0) {
+      // Override with manifest values if present
+      if (manifest) {
+        if (manifest.framework) framework = manifest.framework;
+        if (manifest.database) database = manifest.database;
+        if (manifest.tags) tags = [...tags, ...manifest.tags.filter(t => !tags.includes(t))];
+
+        // Also update project description from manifest if provided
+        if (manifest.description) {
           await db
-            .insert(techStackSnapshots)
-            .values({
-              id: `tech-${projectId}`,
-              projectId,
+            .update(projects)
+            .set({ description: manifest.description, updatedAt: now })
+            .where(eq(projects.id, projectId));
+        }
+      }
+
+      // Create tech snapshot if we detected anything
+      if (framework || database || auth || tags.length > 0) {
+        await db
+          .insert(techStackSnapshots)
+          .values({
+            id: `tech-${projectId}`,
+            projectId,
+            primaryFramework: framework,
+            primaryDB: database,
+            primaryAuth: auth,
+            tags: JSON.stringify(tags),
+            lastScannedAt: now
+          })
+          .onConflictDoUpdate({
+            target: techStackSnapshots.projectId,
+            set: {
               primaryFramework: framework,
               primaryDB: database,
               primaryAuth: auth,
               tags: JSON.stringify(tags),
               lastScannedAt: now
-            })
-            .onConflictDoUpdate({
-              target: techStackSnapshots.projectId,
-              set: {
-                primaryFramework: framework,
-                primaryDB: database,
-                primaryAuth: auth,
-                tags: JSON.stringify(tags),
-                lastScannedAt: now
-              }
-            });
-        }
+            }
+          });
       }
     }
 

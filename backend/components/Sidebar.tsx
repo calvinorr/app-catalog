@@ -1,16 +1,16 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { LayoutDashboard, CheckCircle, AlertCircle, Code2, FolderKanban } from 'lucide-react';
+import { LayoutDashboard, CheckCircle, AlertCircle, Code2, FolderKanban, Database } from 'lucide-react';
 import { ProjectData, ProjectCategory } from '@/types';
 
 interface SidebarProps {
   projects: ProjectData[];
   activeFilter: {
-    type: 'overview' | 'status' | 'framework' | 'category';
+    type: 'overview' | 'status' | 'framework' | 'category' | 'database';
     value: string;
   };
-  onFilterChange: (type: 'overview' | 'status' | 'framework' | 'category', value: string) => void;
+  onFilterChange: (type: 'overview' | 'status' | 'framework' | 'category' | 'database', value: string) => void;
 }
 
 export function Sidebar({ projects, activeFilter, onFilterChange }: SidebarProps) {
@@ -34,11 +34,25 @@ export function Sidebar({ projects, activeFilter, onFilterChange }: SidebarProps
       categoryCounts.set(cat, (categoryCounts.get(cat) || 0) + 1);
     });
 
+    const databaseCounts = new Map<string, number>();
+    let noDatabase = 0;
+    projects.forEach(p => {
+      if (p.database && p.database.trim()) {
+        databaseCounts.set(p.database, (databaseCounts.get(p.database) || 0) + 1);
+      } else {
+        noDatabase++;
+      }
+    });
+    if (noDatabase > 0) {
+      databaseCounts.set('No Database', noDatabase);
+    }
+
     return {
       total: projects.length,
       status: statusCounts,
       frameworks: frameworkCounts,
       categories: categoryCounts,
+      databases: databaseCounts,
     };
   }, [projects]);
 
@@ -168,6 +182,41 @@ export function Sidebar({ projects, activeFilter, onFilterChange }: SidebarProps
                   <div className="flex items-center gap-2">
                     <FolderKanban className="w-4 h-4" />
                     <span className="truncate">{category}</span>
+                  </div>
+                  <span className="text-xs bg-slate-700 px-1.5 py-0.5 rounded">
+                    {count}
+                  </span>
+                </button>
+              ))}
+          </div>
+        </div>
+
+        {/* By Database */}
+        <div>
+          <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">
+            Database
+          </h3>
+          <div className="space-y-1">
+            {Array.from(counts.databases.entries())
+              .sort(([a], [b]) => {
+                // Put "No Database" last
+                if (a === 'No Database') return 1;
+                if (b === 'No Database') return -1;
+                return a.localeCompare(b);
+              })
+              .map(([database, count]) => (
+                <button
+                  key={database}
+                  onClick={() => onFilterChange('database', database)}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors ${
+                    isActive('database', database)
+                      ? 'bg-indigo-600 text-white'
+                      : 'hover:bg-slate-800 text-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Database className="w-4 h-4" />
+                    <span className="truncate">{database}</span>
                   </div>
                   <span className="text-xs bg-slate-700 px-1.5 py-0.5 rounded">
                     {count}

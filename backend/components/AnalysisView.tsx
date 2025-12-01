@@ -1,7 +1,7 @@
 
 import React, { useMemo } from 'react';
 import { ProjectData } from '@/types';
-import { PieChart, Server, Database, Layers, CheckCircle, XCircle } from 'lucide-react';
+import { PieChart, Server, Database, Layers, CheckCircle, XCircle, Clock, TrendingUp } from 'lucide-react';
 import { ActivityHeatmap } from '@/components/ActivityHeatmap';
 
 interface AnalysisViewProps {
@@ -48,11 +48,32 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({ projects }) => {
         else d.level = 4;
     });
 
-    return { 
+    // Database journey - find earliest project for each database
+    const dbJourney: { db: string; firstProject: ProjectData; date: Date }[] = [];
+    const dbFirstUse: Record<string, { project: ProjectData; date: Date }> = {};
+
+    projects.forEach(p => {
+      if (p.database) {
+        const projectDate = p.lastCommitAt ? new Date(p.lastCommitAt) : new Date();
+        if (!dbFirstUse[p.database] || projectDate < dbFirstUse[p.database].date) {
+          dbFirstUse[p.database] = { project: p, date: projectDate };
+        }
+      }
+    });
+
+    Object.entries(dbFirstUse).forEach(([db, { project, date }]) => {
+      dbJourney.push({ db, firstProject: project, date });
+    });
+
+    // Sort by date (earliest first)
+    dbJourney.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    return {
         stack: Object.entries(stackCounts).sort(([,a], [,b]) => b - a),
         db: Object.entries(dbCounts).sort(([,a], [,b]) => b - a),
         status: statusCounts,
-        globalCommits
+        globalCommits,
+        dbJourney
     };
   }, [projects]);
 
@@ -127,19 +148,79 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({ projects }) => {
             <h3 className="text-slate-400 font-bold text-xs uppercase tracking-wider mb-6 flex items-center gap-2">
                 <Database className="w-4 h-4" /> Database Usage
             </h3>
-            <div className="flex flex-wrap gap-3">
-                {stats.db.map(([db, count]) => (
-                    <div key={db} className="group relative flex items-center justify-center p-4 bg-slate-700 rounded-xl border border-slate-600 hover:border-indigo-500 hover:bg-slate-700/50 transition-all cursor-default">
-                        <div className="text-center">
-                            <div className="text-lg font-bold text-slate-200 group-hover:text-indigo-400">{db}</div>
-                            <div className="text-xs text-slate-500 mt-1">{count} projects</div>
+            {/* Bar chart for database distribution */}
+            <div className="space-y-3">
+                {stats.db.map(([db, count], i) => (
+                    <div key={db} className="flex items-center gap-4">
+                        <span className="w-24 text-sm font-medium text-slate-200 truncate">{db}</span>
+                        <div className="flex-1 h-3 bg-slate-700 rounded-full overflow-hidden">
+                            <div
+                                className={`h-full rounded-full ${
+                                  i === 0 ? 'bg-indigo-500' :
+                                  i === 1 ? 'bg-purple-500' :
+                                  i === 2 ? 'bg-pink-500' : 'bg-slate-500'
+                                }`}
+                                style={{ width: `${(count / projects.length) * 100}%` }}
+                            />
                         </div>
+                        <span className="text-xs text-slate-400 font-mono w-8 text-right">{count}</span>
                     </div>
                 ))}
                 {stats.db.length === 0 && <div className="text-slate-500 text-sm italic">No databases detected across projects.</div>}
             </div>
           </div>
       </div>
+
+      {/* Database Learning Journey */}
+      {stats.dbJourney.length > 0 && (
+        <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm">
+          <h3 className="text-slate-400 font-bold text-xs uppercase tracking-wider mb-6 flex items-center gap-2">
+            <TrendingUp className="w-4 h-4" /> Database Learning Journey
+          </h3>
+          <p className="text-slate-500 text-sm mb-6">
+            Your progression through different database technologies based on earliest project activity.
+          </p>
+          <div className="relative">
+            {/* Timeline line */}
+            <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-slate-700" />
+
+            {/* Timeline items */}
+            <div className="space-y-6">
+              {stats.dbJourney.map((item, idx) => (
+                <div key={item.db} className="relative flex items-start gap-6 pl-10">
+                  {/* Timeline dot */}
+                  <div className={`absolute left-2 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    idx === 0 ? 'bg-indigo-500 border-indigo-400' :
+                    idx === stats.dbJourney.length - 1 ? 'bg-emerald-500 border-emerald-400' :
+                    'bg-slate-600 border-slate-500'
+                  }`}>
+                    <span className="text-[8px] font-bold text-white">{idx + 1}</span>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 bg-slate-700/50 rounded-lg p-4 border border-slate-600">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-slate-100">{item.db}</span>
+                      <span className="text-xs text-slate-500 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {item.date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                      </span>
+                    </div>
+                    <div className="text-sm text-slate-400">
+                      First used in: <span className="text-indigo-400 font-medium">{item.firstProject.name}</span>
+                    </div>
+                    {item.firstProject.framework && (
+                      <div className="text-xs text-slate-500 mt-1">
+                        with {item.firstProject.framework}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

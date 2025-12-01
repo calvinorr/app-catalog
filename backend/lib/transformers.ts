@@ -73,23 +73,90 @@ export function generateActivityPoints(
   return points;
 }
 
-function inferCategory(framework: string | null, tags: string[]): string {
-  if (!framework) return 'Tooling';
+function inferCategoryFromLanguage(language: string | null): string {
+  if (!language) return 'Unknown';
 
-  const lowerFramework = framework.toLowerCase();
-  const lowerTags = tags.map(t => t.toLowerCase());
+  const lang = language.toLowerCase();
 
-  if (lowerFramework.includes('next.js') || lowerFramework.includes('nextjs')) {
-    return 'Fullstack';
-  }
-  if (lowerFramework.includes('react') || lowerFramework.includes('vue') || lowerFramework.includes('vite')) {
+  // Frontend languages
+  if (['typescript', 'javascript', 'html', 'css', 'scss', 'vue', 'svelte'].includes(lang)) {
     return 'Frontend';
   }
-  if (lowerTags.includes('api') || lowerTags.includes('backend')) {
+
+  // Backend languages
+  if (['python', 'go', 'rust', 'java', 'kotlin', 'c#', 'ruby', 'php', 'c', 'c++'].includes(lang)) {
     return 'Backend';
   }
 
-  return 'Fullstack';
+  // Shell/config usually means tooling/scripts
+  if (['shell', 'bash', 'dockerfile', 'makefile'].includes(lang)) {
+    return 'Tooling';
+  }
+
+  return 'Unknown';
+}
+
+function humanizeProjectName(name: string): string {
+  // Convert kebab-case or snake_case to Title Case
+  return name
+    .replace(/[-_]/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function inferCategory(framework: string | null, tags: string[], language: string | null = null): string {
+  // If we have a framework, use framework-based inference
+  if (framework) {
+    const lowerFramework = framework.toLowerCase();
+    const lowerTags = tags.map(t => t.toLowerCase());
+
+    if (lowerFramework.includes('next.js') || lowerFramework.includes('nextjs')) {
+      return 'Fullstack';
+    }
+    if (lowerFramework.includes('react') || lowerFramework.includes('vue') || lowerFramework.includes('vite') || lowerFramework.includes('svelte')) {
+      return 'Frontend';
+    }
+    if (lowerFramework.includes('express') || lowerFramework.includes('fastify') || lowerFramework.includes('hono')) {
+      return 'Backend';
+    }
+    if (lowerTags.includes('api') || lowerTags.includes('backend')) {
+      return 'Backend';
+    }
+
+    return 'Fullstack';
+  }
+
+  // No framework detected - fall back to language-based inference
+  return inferCategoryFromLanguage(language);
+}
+
+function generateDescription(
+  project: DBProject,
+  framework: string | null,
+  database: string | null,
+  category: string
+): string {
+  // If project has a description, use it
+  if (project.description) return project.description;
+
+  // Build contextual description
+  const humanName = humanizeProjectName(project.name);
+
+  // If we have tech info, include it
+  const techParts: string[] = [];
+  if (framework) techParts.push(framework);
+  if (database) techParts.push(database);
+
+  if (techParts.length > 0) {
+    return `${humanName} - ${techParts.join(' + ')} project`;
+  }
+
+  // If we have language info, use it
+  if (project.language) {
+    return `${humanName} - ${project.language} project`;
+  }
+
+  // Last resort: just the humanized name
+  return humanName;
 }
 
 export function transformProject(
@@ -100,7 +167,7 @@ export function transformProject(
   recentActivityItems: DBActivity[]
 ): any {
   const tags = tech?.tags ? JSON.parse(tech.tags) : [];
-  const category = inferCategory(tech?.primaryFramework || null, tags);
+  const category = inferCategory(tech?.primaryFramework || null, tags, project.language);
 
   // Build tech stack array
   const techStack: string[] = [];
@@ -140,10 +207,14 @@ export function transformProject(
   // GitHub Actions placeholder
   const actions: GithubAction[] = [];
 
+  const framework = tech?.primaryFramework || project.language || null;
+  const database = tech?.primaryDB || null;
+  const description = generateDescription(project, framework, database, category);
+
   return {
     id: project.id,
     name: project.name,
-    description: project.description || `A ${category.toLowerCase()} project`,
+    description,
     category,
     status: project.status,
     stage: project.stage,
@@ -154,9 +225,10 @@ export function transformProject(
     lastDeploymentAt: project.lastDeploymentAt,
     lastCommitAt: project.lastCommitAt,
     techStack,
-    backend: tech?.primaryDB || undefined,
-    database: tech?.primaryDB || undefined,
-    framework: tech?.primaryFramework || 'Unknown',
+    language: project.language,
+    backend: database || undefined,
+    database: database || undefined,
+    framework: framework || 'None detected',
     isPinned: project.isPinned,
     lastDeployment,
     recentDeployments,

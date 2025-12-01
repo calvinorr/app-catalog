@@ -1,7 +1,7 @@
 import { ProjectData, ProjectStatus, ProjectStage, ActivityItem, ProjectCategory, ActivityPoint, Deployment } from '@/types';
 import { MOCK_PROJECTS } from '@/data';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || '/api';
+const API_BASE = '/api';
 
 async function safeFetch(input: RequestInfo | URL, init?: RequestInit) {
   try {

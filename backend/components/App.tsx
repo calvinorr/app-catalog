@@ -25,6 +25,7 @@ export default function App() {
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
+  const [sidebarDatabaseFilter, setSidebarDatabaseFilter] = useState<string | null>(null);
 
   const [selectedProject, setSelectedProject] = useState<ProjectData | null>(null);
   const { activity: globalActivity } = useActivity(projects);
@@ -33,7 +34,7 @@ export default function App() {
 
   // Sidebar filter state
   const [sidebarFilter, setSidebarFilter] = useState<{
-    type: 'overview' | 'status' | 'framework' | 'category';
+    type: 'overview' | 'status' | 'framework' | 'category' | 'database';
     value: string;
   }>({ type: 'overview', value: 'all' });
 
@@ -50,18 +51,28 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Apply source filter for sidebar counts (this should match the main filter logic)
+  const sourceFilteredProjects = useMemo(() => {
+    if (sourceFilter === 'github') {
+      return projects.filter(p => p.repoSlug && !p.vercelProject);
+    } else if (sourceFilter === 'vercel') {
+      return projects.filter(p => p.vercelProject);
+    }
+    return projects;
+  }, [projects, sourceFilter]);
+
   // Extract unique frameworks for filter dropdown
   const availableFrameworks = useMemo(() => {
     const frameworks = new Set<string>();
-    projects.forEach(p => {
+    sourceFilteredProjects.forEach(p => {
       if (p.framework) frameworks.add(p.framework);
     });
     return Array.from(frameworks).sort();
-  }, [projects]);
+  }, [sourceFilteredProjects]);
 
   // Handle sidebar filter changes
   const handleSidebarFilterChange = (
-    type: 'overview' | 'status' | 'framework' | 'category',
+    type: 'overview' | 'status' | 'framework' | 'category' | 'database',
     value: string
   ) => {
     setSidebarFilter({ type, value });
@@ -71,6 +82,7 @@ export default function App() {
     setStatusFilter('all');
     setFrameworkFilter('all');
     setDatabaseFilter('all');
+    setSidebarDatabaseFilter(null);
 
     if (type === 'overview') {
       // Show all projects
@@ -87,6 +99,8 @@ export default function App() {
         'Mobile': ProjectCategory.Mobile,
       };
       setSelectedCategory(categoryMap[value] || ProjectCategory.All);
+    } else if (type === 'database') {
+      setSidebarDatabaseFilter(value);
     }
   };
 
@@ -118,11 +132,20 @@ export default function App() {
       result = result.filter(p => p.framework === frameworkFilter);
     }
 
-    // 1d. Database Filter
+    // 1d. Database Filter (toolbar)
     if (databaseFilter === 'yes') {
       result = result.filter(p => p.database && p.database.trim() !== '');
     } else if (databaseFilter === 'no') {
       result = result.filter(p => !p.database || p.database.trim() === '');
+    }
+
+    // 1e. Sidebar Database Filter (specific database)
+    if (sidebarDatabaseFilter) {
+      if (sidebarDatabaseFilter === 'No Database') {
+        result = result.filter(p => !p.database || p.database.trim() === '');
+      } else {
+        result = result.filter(p => p.database === sidebarDatabaseFilter);
+      }
     }
 
     // 2. Search Filter
@@ -153,7 +176,7 @@ export default function App() {
     });
 
     return result;
-  }, [projects, selectedCategory, statusFilter, frameworkFilter, databaseFilter, sourceFilter, searchTerm, sortBy]);
+  }, [projects, selectedCategory, statusFilter, frameworkFilter, databaseFilter, sidebarDatabaseFilter, sourceFilter, searchTerm, sortBy]);
 
   const toggleProjectStatus = (projectId: string) => {
     toggleStatus(projectId);
@@ -187,9 +210,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 font-sans text-slate-100">
-      {/* Sidebar */}
+      {/* Sidebar - uses source-filtered projects for accurate counts */}
       <Sidebar
-        projects={projects}
+        projects={sourceFilteredProjects}
         activeFilter={sidebarFilter}
         onFilterChange={handleSidebarFilterChange}
       />
