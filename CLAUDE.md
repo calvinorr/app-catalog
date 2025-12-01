@@ -90,3 +90,40 @@ Frontend (optional):
 Both apps use `@/` path alias:
 - Root tsconfig maps `@/*` to `./*`
 - Vite config sets up the alias for bundling
+
+## Deployment (Vercel)
+
+**IMPORTANT**: The Next.js app lives in `backend/`, NOT the root directory.
+
+### Production URL
+- https://backend-calvin-orrs-projects.vercel.app
+
+### Deploying Changes
+Deploy from the `backend/` directory using CLI:
+```bash
+cd backend && vercel --prod --yes
+```
+
+### GitHub Auto-Deploy Setup
+If GitHub integration is needed, connect via Vercel Dashboard:
+1. Go to https://vercel.com → "backend" project → Settings → Git
+2. Connect to `calvinorr/app-catalog` repository
+3. Set **Root Directory** to `backend` (critical!)
+
+### Common Deployment Error
+If you see "No Next.js version detected", it means Vercel is building from root instead of `backend/`. Fix by:
+1. Deploying via CLI from `backend/` directory, OR
+2. Setting Root Directory to `backend` in Vercel project settings
+
+### Environment Variables (Vercel)
+Ensure these are set in Vercel project settings:
+- `TURSO_URL`
+- `TURSO_TOKEN`
+- `GITHUB_TOKEN`
+- `VERCEL_TOKEN`
+
+## Local Development Notes
+
+The Vite frontend (root) and Next.js backend (backend/) are separate apps:
+- **For testing UI**: Use Vercel deployment (local Vite has compatibility issues)
+- **For API development**: Run `npm run dev` from `backend/` directory
