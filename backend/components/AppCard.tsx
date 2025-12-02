@@ -1,10 +1,11 @@
 import React from 'react';
-import { GitBranch, Clock, AlertCircle, CheckCircle, Loader2, ArrowUpRight, FolderOpen, Github, Database, ExternalLink } from 'lucide-react';
+import { GitBranch, Clock, AlertCircle, CheckCircle, Loader2, ArrowUpRight, FolderOpen, Github, Database, ExternalLink, Pin } from 'lucide-react';
 import { ProjectData, DeploymentStatus } from '@/types';
 
 interface ProjectCardProps {
   project: ProjectData;
   onClick: (project: ProjectData) => void;
+  onTogglePin: (id: string) => void;
 }
 
 const StatusIcon = ({ status }: { status: DeploymentStatus }) => {
@@ -60,7 +61,7 @@ const DeploymentStatusBadge = ({ hasVercel, lastDeploymentFailed }: { hasVercel:
   );
 };
 
-export const AppCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
+export const AppCard: React.FC<ProjectCardProps> = ({ project, onClick, onTogglePin }) => {
   const timeAgo = (date: string) => {
     const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
     if (seconds < 60) return 'Just now';
@@ -97,6 +98,11 @@ export const AppCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
   const handleQuickAction = (e: React.MouseEvent, url: string) => {
     e.stopPropagation();
     window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleTogglePin = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onTogglePin(project.id);
   };
 
   return (
@@ -154,6 +160,19 @@ export const AppCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
 
       {/* Quick Actions Row */}
       <div className="mt-auto pt-4 border-t border-slate-700 flex items-center gap-2">
+        {/* Pin button */}
+        <button
+          onClick={handleTogglePin}
+          className={`flex items-center justify-center w-8 h-8 rounded transition-colors group/btn ${
+            project.isPinned
+              ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
+              : 'text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+          }`}
+          title={project.isPinned ? 'Unpin project' : 'Pin project'}
+        >
+          <Pin className={`w-4 h-4 ${project.isPinned ? 'fill-current' : ''}`} />
+        </button>
+
         {/* Local folder link */}
         {path && (
           <button

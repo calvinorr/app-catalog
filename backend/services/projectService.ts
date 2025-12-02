@@ -131,6 +131,20 @@ export async function updateProjectStage(id: string, stage: ProjectStage) {
   });
 }
 
+export async function toggleProjectPin(id: string) {
+  const res = await safeFetch(`${API_BASE}/projects/${id}/pin`, {
+    method: 'PATCH'
+  });
+  if (!res) return null;
+  try {
+    const data = await res.json();
+    return data.isPinned as boolean;
+  } catch (err) {
+    console.warn('Failed to parse pin response.', err);
+    return null;
+  }
+}
+
 export async function fetchActivity(): Promise<ActivityItem[]> {
   const res = await safeFetch(`${API_BASE}/activity`);
   if (!res) return [];

@@ -16,13 +16,12 @@ interface SidebarProps {
 interface AccordionSectionProps {
   title: string;
   icon: React.ReactNode;
-  count: number;
   isOpen: boolean;
   onToggle: () => void;
   children: React.ReactNode;
 }
 
-function AccordionSection({ title, icon, count, isOpen, onToggle, children }: AccordionSectionProps) {
+function AccordionSection({ title, icon, isOpen, onToggle, children }: AccordionSectionProps) {
   return (
     <div className="border-b border-slate-700/50 last:border-b-0">
       <button
@@ -33,16 +32,11 @@ function AccordionSection({ title, icon, count, isOpen, onToggle, children }: Ac
           {icon}
           <span className="text-xs font-semibold uppercase tracking-wider">{title}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full font-medium">
-            {count}
-          </span>
-          {isOpen ? (
-            <ChevronUp className="w-4 h-4 text-slate-500" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-slate-500" />
-          )}
-        </div>
+        {isOpen ? (
+          <ChevronUp className="w-4 h-4 text-slate-500" />
+        ) : (
+          <ChevronDown className="w-4 h-4 text-slate-500" />
+        )}
       </button>
       <div className={`overflow-hidden transition-all duration-200 ${isOpen ? 'max-h-96' : 'max-h-0'}`}>
         <div className="px-2 pb-2 space-y-1">
@@ -185,7 +179,6 @@ export function Sidebar({ projects, activeFilter, onFilterChange }: SidebarProps
         <AccordionSection
           title="Status"
           icon={<CheckCircle className="w-4 h-4" />}
-          count={counts.status.active + counts.status.redundant}
           isOpen={openSections.status}
           onToggle={() => toggleSection('status')}
         >
@@ -209,7 +202,6 @@ export function Sidebar({ projects, activeFilter, onFilterChange }: SidebarProps
         <AccordionSection
           title="Framework"
           icon={<Code2 className="w-4 h-4" />}
-          count={counts.frameworks.size}
           isOpen={openSections.framework}
           onToggle={() => toggleSection('framework')}
         >
@@ -231,7 +223,6 @@ export function Sidebar({ projects, activeFilter, onFilterChange }: SidebarProps
         <AccordionSection
           title="Category"
           icon={<FolderKanban className="w-4 h-4" />}
-          count={counts.categories.size}
           isOpen={openSections.category}
           onToggle={() => toggleSection('category')}
         >
@@ -253,7 +244,6 @@ export function Sidebar({ projects, activeFilter, onFilterChange }: SidebarProps
         <AccordionSection
           title="Database"
           icon={<Database className="w-4 h-4" />}
-          count={counts.databases.size}
           isOpen={openSections.database}
           onToggle={() => toggleSection('database')}
         >

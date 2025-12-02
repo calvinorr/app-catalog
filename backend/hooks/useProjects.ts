@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ProjectData, ProjectStatus, ProjectStage } from '@/types';
-import { fetchProjects, updateProjectStatus, updateProjectStage } from '@/services/projectService';
+import { fetchProjects, updateProjectStatus, updateProjectStage, toggleProjectPin } from '@/services/projectService';
 
 interface UseProjectsResult {
   projects: ProjectData[];
@@ -9,6 +9,7 @@ interface UseProjectsResult {
   setProjects: React.Dispatch<React.SetStateAction<ProjectData[]>>;
   toggleStatus: (id: string) => Promise<void>;
   updateStage: (id: string, stage: ProjectStage) => Promise<void>;
+  togglePin: (id: string) => Promise<void>;
 }
 
 export function useProjects(): UseProjectsResult {
@@ -72,5 +73,29 @@ export function useProjects(): UseProjectsResult {
     }
   };
 
-  return { projects, loading, error, setProjects, toggleStatus, updateStage };
+  const togglePin = async (id: string) => {
+    const project = projects.find((p) => p.id === id);
+    if (!project) return;
+    const prevPinned = project.isPinned || false;
+    // Optimistically update UI
+    setProjects((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, isPinned: !prevPinned } : p))
+    );
+    try {
+      const newIsPinned = await toggleProjectPin(id);
+      if (newIsPinned !== null) {
+        // Update with server response
+        setProjects((prev) =>
+          prev.map((p) => (p.id === id ? { ...p, isPinned: newIsPinned } : p))
+        );
+      }
+    } catch (err) {
+      console.error('Failed to toggle pin; reverting.', err);
+      setProjects((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, isPinned: prevPinned } : p))
+      );
+    }
+  };
+
+  return { projects, loading, error, setProjects, toggleStatus, updateStage, togglePin };
 }

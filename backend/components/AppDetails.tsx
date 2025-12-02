@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { X, ExternalLink, Github, Terminal, Database, Server, Clock, GitCommit, CheckCircle, XCircle, AlertCircle, TrendingUp, Layers, ChevronDown } from 'lucide-react';
+import { X, ExternalLink, Github, Terminal, Database, Server, Clock, GitCommit, CheckCircle, XCircle, AlertCircle, TrendingUp, Layers, ChevronDown, Pin } from 'lucide-react';
 import { ProjectData, DeploymentStatus, ProjectStage } from '@/types';
 import { ActivityHeatmap } from '@/components/ActivityHeatmap';
 
@@ -9,6 +9,7 @@ interface ProjectDetailsProps {
   onClose: () => void;
   onToggleStatus: (id: string) => void;
   onStageChange?: (id: string, stage: ProjectStage) => void;
+  onTogglePin?: (id: string) => void;
 }
 
 const StatusIcon = ({ status }: { status: DeploymentStatus }) => {
@@ -27,7 +28,7 @@ const STAGE_OPTIONS: { value: ProjectStage; label: string; color: string }[] = [
   { value: 'indev', label: 'In Dev', color: 'bg-slate-500/20 text-slate-400 border-slate-500/30' },
 ];
 
-export const AppDetails: React.FC<ProjectDetailsProps> = ({ app: project, onClose, onToggleStatus, onStageChange }) => {
+export const AppDetails: React.FC<ProjectDetailsProps> = ({ app: project, onClose, onToggleStatus, onStageChange, onTogglePin }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       <div
@@ -55,6 +56,19 @@ export const AppDetails: React.FC<ProjectDetailsProps> = ({ app: project, onClos
             <p className="text-slate-400 max-w-2xl">{project.description}</p>
           </div>
           <div className="flex items-center gap-3">
+            {/* Pin Button */}
+            <button
+              onClick={() => onTogglePin?.(project.id)}
+              className={`p-2 rounded-lg transition-colors ${
+                project.isPinned
+                  ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
+                  : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-200'
+              }`}
+              title={project.isPinned ? 'Unpin project' : 'Pin project'}
+            >
+              <Pin className={`w-5 h-5 ${project.isPinned ? 'fill-current' : ''}`} />
+            </button>
+
             {/* Stage Selector */}
             <div className="relative">
               <select

@@ -64,9 +64,9 @@ export async function GET() {
         desc(sql`COALESCE(${projects.lastDeploymentAt}, ${projects.lastCommitAt}, ${projects.updatedAt})`)
       );
 
-    // Fetch all activity items for the last 90 days
+    // Fetch all activity items for the last 365 days
     const ninetyDaysAgo = new Date();
-    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 365);
 
     const allActivities = await db
       .select()

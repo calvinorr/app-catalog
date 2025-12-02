@@ -8,6 +8,7 @@ import { Navigation } from '@/components/Navigation';
 import { WeeklyFocus } from '@/components/WeeklyFocus';
 import { ProjectToolbar } from '@/components/ProjectToolbar';
 import { AnalysisView } from '@/components/AnalysisView';
+import { PortfolioView } from '@/components/PortfolioView';
 import { QuickStats } from '@/components/QuickStats';
 import { Sidebar } from '@/components/Sidebar';
 import { CommandPalette } from '@/components/CommandPalette';
@@ -17,7 +18,7 @@ import { useProjects } from '@/hooks/useProjects';
 import { useActivity } from '@/hooks/useActivity';
 
 export default function App() {
-  const { projects, loading, error, toggleStatus, updateStage } = useProjects();
+  const { projects, loading, error, toggleStatus, updateStage, togglePin } = useProjects();
   const [currentView, setCurrentView] = useState<ViewOption>('dashboard');
   const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>(ProjectCategory.All);
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
@@ -197,6 +198,16 @@ export default function App() {
     }
   };
 
+  const handleTogglePin = (projectId: string) => {
+    togglePin(projectId);
+    if (selectedProject?.id === projectId) {
+      const updated = projects.find(p => p.id === projectId);
+      if (updated) {
+        setSelectedProject({ ...updated, isPinned: !updated.isPinned });
+      }
+    }
+  };
+
   const handleRefreshActivity = async () => {
     setIsRefreshing(true);
     try {
@@ -236,35 +247,85 @@ export default function App() {
         />
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
+
         {currentView === 'analysis' ? (
           <AnalysisView projects={projects} />
+        ) : currentView === 'portfolio' ? (
+          <PortfolioView projects={projects} onProjectClick={setSelectedProject} />
         ) : currentView === 'pinned' ? (
-          /* Pinned View */
+          /* Pinned View - Two Column Layout */
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-slate-100">Pinned Projects</h2>
               <span className="text-sm text-slate-400">
                 {projects.filter(p => p.isPinned).length} pinned
               </span>
             </div>
-            {projects.filter(p => p.isPinned).length === 0 ? (
-              <div className="text-center py-20 border-2 border-dashed border-slate-700 rounded-xl">
-                <Pin className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                <p className="text-slate-400">No pinned projects yet.</p>
-                <p className="text-sm text-slate-500 mt-1">Pin projects from the Dashboard for quick access.</p>
+
+            {/* Two Column Grid - Side by side on desktop, stacked on mobile */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+              {/* Left Column: Pinned Repos (GitHub only, no Vercel) */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-slate-200 flex items-center gap-2">
+                  <Pin className="w-5 h-5" />
+                  Pinned Repos
+                  <span className="text-sm text-slate-400 font-normal">
+                    ({projects.filter(p => p.isPinned && p.repoSlug && !p.vercelProject).length})
+                  </span>
+                </h3>
+
+                {projects.filter(p => p.isPinned && p.repoSlug && !p.vercelProject).length === 0 ? (
+                  <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl bg-slate-900/30">
+                    <Pin className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+                    <p className="text-slate-400 text-sm">No pinned repositories yet.</p>
+                    <p className="text-xs text-slate-500 mt-1">Pin GitHub repos without deployments.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {projects.filter(p => p.isPinned && p.repoSlug && !p.vercelProject).map(project => (
+                      <AppCard
+                        key={project.id}
+                        project={project}
+                        onClick={setSelectedProject}
+                        onTogglePin={handleTogglePin}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {projects.filter(p => p.isPinned).map(project => (
-                  <AppCard
-                    key={project.id}
-                    project={project}
-                    onClick={setSelectedProject}
-                  />
-                ))}
+
+              {/* Right Column: Pinned Deployments (Vercel projects) */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-slate-200 flex items-center gap-2">
+                  <Pin className="w-5 h-5" />
+                  Pinned Deployments
+                  <span className="text-sm text-slate-400 font-normal">
+                    ({projects.filter(p => p.isPinned && p.vercelProject).length})
+                  </span>
+                </h3>
+
+                {projects.filter(p => p.isPinned && p.vercelProject).length === 0 ? (
+                  <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl bg-slate-900/30">
+                    <Pin className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+                    <p className="text-slate-400 text-sm">No pinned deployments yet.</p>
+                    <p className="text-xs text-slate-500 mt-1">Pin projects with Vercel deployments.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {projects.filter(p => p.isPinned && p.vercelProject).map(project => (
+                      <AppCard
+                        key={project.id}
+                        project={project}
+                        onClick={setSelectedProject}
+                        onTogglePin={handleTogglePin}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
+
+            </div>
           </div>
         ) : (
           /* Dashboard View */
@@ -309,6 +370,7 @@ export default function App() {
                           key={project.id}
                           project={project}
                           onClick={setSelectedProject}
+                          onTogglePin={handleTogglePin}
                         />
                       ))}
                     </div>
@@ -342,6 +404,7 @@ export default function App() {
           onClose={() => setSelectedProject(null)}
           onToggleStatus={toggleProjectStatus}
           onStageChange={handleStageChange}
+          onTogglePin={handleTogglePin}
         />
       )}
     </div>
