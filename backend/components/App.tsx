@@ -218,11 +218,26 @@ export default function App() {
   const handleRefreshActivity = async () => {
     setIsRefreshing(true);
     try {
-      await fetch('/api/refresh-activity', { method: 'POST' });
-      // Reload the page to fetch fresh activity data
+      // First sync Vercel projects to get real URLs (fast)
+      await fetch('/api/vercel/sync', { method: 'POST' });
+      // Then refresh activity data (can be slow, use AbortController for timeout)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+      try {
+        await fetch('/api/refresh-activity', {
+          method: 'POST',
+          signal: controller.signal
+        });
+      } catch (e) {
+        // Timeout is OK - activity refresh can take a while
+        console.log('Activity refresh timed out or failed - Vercel URLs still synced');
+      } finally {
+        clearTimeout(timeoutId);
+      }
+      // Reload the page to fetch fresh data
       window.location.reload();
     } catch (err) {
-      console.error('Failed to refresh activity:', err);
+      console.error('Failed to sync:', err);
       setIsRefreshing(false);
     }
   };
