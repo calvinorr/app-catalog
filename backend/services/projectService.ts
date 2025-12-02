@@ -46,6 +46,7 @@ function createDeploymentFromTimestamp(timestamp: Date | string | null, projectN
 interface APIProject {
   id: string;
   name: string;
+  displayName?: string | null;
   path: string;
   repoSlug: string | null;
   vercelProject: string | null;
