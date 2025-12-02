@@ -11,7 +11,7 @@ import { AnalysisView } from '@/components/AnalysisView';
 import { QuickStats } from '@/components/QuickStats';
 import { Sidebar } from '@/components/Sidebar';
 import { CommandPalette } from '@/components/CommandPalette';
-import { ScrollText, GitCommit, CheckCircle, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
+import { ScrollText, GitCommit, CheckCircle, AlertCircle, Loader2, RefreshCw, Pin } from 'lucide-react';
 import { useProjects } from '@/hooks/useProjects';
 import { useActivity } from '@/hooks/useActivity';
 
@@ -238,6 +238,33 @@ export default function App() {
         
         {currentView === 'analysis' ? (
           <AnalysisView projects={projects} />
+        ) : currentView === 'pinned' ? (
+          /* Pinned View */
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-100">Pinned Projects</h2>
+              <span className="text-sm text-slate-400">
+                {projects.filter(p => p.isPinned).length} pinned
+              </span>
+            </div>
+            {projects.filter(p => p.isPinned).length === 0 ? (
+              <div className="text-center py-20 border-2 border-dashed border-slate-700 rounded-xl">
+                <Pin className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+                <p className="text-slate-400">No pinned projects yet.</p>
+                <p className="text-sm text-slate-500 mt-1">Pin projects from the Dashboard for quick access.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {projects.filter(p => p.isPinned).map(project => (
+                  <AppCard
+                    key={project.id}
+                    project={project}
+                    onClick={setSelectedProject}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         ) : (
           /* Dashboard View */
           <>

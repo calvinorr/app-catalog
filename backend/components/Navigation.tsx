@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ViewOption, SourceFilter } from '@/types';
-import { TerminalSquare, LayoutDashboard, PieChart, Github } from 'lucide-react';
+import { TerminalSquare, LayoutDashboard, PieChart, Github, Pin } from 'lucide-react';
 
 interface NavigationProps {
   currentView: ViewOption;
@@ -85,6 +85,17 @@ export const Navigation: React.FC<NavigationProps> = ({
               >
                 <LayoutDashboard className="w-4 h-4" />
                 Dashboard
+              </button>
+              <button
+                onClick={() => onSelectView('pinned')}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                  currentView === 'pinned'
+                    ? 'bg-slate-700 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Pin className="w-4 h-4" />
+                Pinned
               </button>
               <button
                 onClick={() => onSelectView('analysis')}

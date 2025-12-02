@@ -167,11 +167,19 @@ export const AppDetails: React.FC<ProjectDetailsProps> = ({ app: project, onClos
             <div className="space-y-8">
               {/* Links */}
               <div className="space-y-3">
-                <a href={`https://${project.repoUrl}`} target="_blank" rel="noreferrer" className="flex items-center justify-center w-full gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm">
-                  <Github className="w-4 h-4" /> View Repository
-                </a>
+                {(() => {
+                  const githubUrl = project.htmlUrl ||
+                    (project.repoSlug ? `https://github.com/${project.repoSlug}` : null) ||
+                    (project.repoUrl?.startsWith('http') ? project.repoUrl :
+                      project.repoUrl ? `https://${project.repoUrl}` : null);
+                  return githubUrl ? (
+                    <a href={githubUrl} target="_blank" rel="noreferrer" className="flex items-center justify-center w-full gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm">
+                      <Github className="w-4 h-4" /> View Repository
+                    </a>
+                  ) : null;
+                })()}
                 {project.vercelUrl && (
-                  <a href={`https://${project.vercelUrl}`} target="_blank" rel="noreferrer" className="flex items-center justify-center w-full gap-2 px-4 py-2.5 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg hover:bg-slate-700 transition-colors font-medium shadow-sm">
+                  <a href={project.vercelUrl.startsWith('http') ? project.vercelUrl : `https://${project.vercelUrl}`} target="_blank" rel="noreferrer" className="flex items-center justify-center w-full gap-2 px-4 py-2.5 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg hover:bg-slate-700 transition-colors font-medium shadow-sm">
                     <ExternalLink className="w-4 h-4" /> View Deployment
                   </a>
                 )}

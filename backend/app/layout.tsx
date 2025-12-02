@@ -2,8 +2,11 @@ import React from 'react';
 import { Providers } from '@/components/Providers';
 
 export const metadata = {
-  title: 'Nexus App Catalog',
+  title: 'DevDash - Project Catalog',
   description: 'Developer dashboard for personal infrastructure management',
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

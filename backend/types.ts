@@ -9,7 +9,7 @@ export enum ProjectCategory {
 }
 
 export type DeploymentStatus = 'success' | 'failed' | 'building' | 'queued';
-export type ViewOption = 'dashboard' | 'analysis';
+export type ViewOption = 'dashboard' | 'analysis' | 'pinned';
 export type SortOption = 'recent' | 'status' | 'alpha';
 export type ProjectStatus = 'active' | 'redundant';
 export type ProjectStage = 'final' | 'beta' | 'alpha' | 'indev';
