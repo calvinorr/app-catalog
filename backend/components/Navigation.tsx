@@ -1,20 +1,24 @@
 
 import React from 'react';
 import { ViewOption, SourceFilter } from '@/types';
-import { TerminalSquare, LayoutDashboard, PieChart, Github, Pin, Briefcase } from 'lucide-react';
+import { TerminalSquare, LayoutDashboard, PieChart, Github, Pin, Briefcase, RefreshCw } from 'lucide-react';
 
 interface NavigationProps {
   currentView: ViewOption;
   onSelectView: (view: ViewOption) => void;
   sourceFilter: SourceFilter;
   onSourceFilterChange: (filter: SourceFilter) => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
   currentView,
   onSelectView,
   sourceFilter,
-  onSourceFilterChange
+  onSourceFilterChange,
+  onRefresh,
+  isRefreshing = false
 }) => {
   return (
     <nav className="sticky top-0 z-40 bg-slate-900 border-b border-slate-700 shadow-sm">
@@ -120,6 +124,19 @@ export const Navigation: React.FC<NavigationProps> = ({
                 Portfolio
               </button>
             </div>
+
+            {/* Sync Button */}
+            {onRefresh && (
+              <button
+                onClick={onRefresh}
+                disabled={isRefreshing}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-800 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-all"
+                title="Sync projects from GitHub & Vercel"
+              >
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Syncing...' : 'Sync'}
+              </button>
+            )}
           </div>
         </div>
       </div>
