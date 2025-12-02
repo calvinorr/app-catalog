@@ -8,7 +8,8 @@ import { WeeklyFocus } from './components/WeeklyFocus';
 import { ProjectToolbar } from './components/ProjectToolbar';
 import { AnalysisView } from './components/AnalysisView';
 import { PinnedPanel } from './backend/components/PinnedPanel';
-import { ScrollText, GitCommit, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Sidebar } from './components/Sidebar';
+import { Pin } from 'lucide-react';
 import { useProjects } from './hooks/useProjects';
 import { useActivity } from './hooks/useActivity';
 
@@ -89,6 +90,34 @@ export default function App() {
         
         {currentView === 'analysis' ? (
           <AnalysisView projects={projects} />
+        ) : currentView === 'pinned' ? (
+          /* Pinned View */
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-900">Pinned Projects</h2>
+              <span className="text-sm text-slate-500">
+                {projects.filter(p => p.isPinned).length} pinned
+              </span>
+            </div>
+            {projects.filter(p => p.isPinned).length === 0 ? (
+              <div className="text-center py-20 border-2 border-dashed border-slate-200 rounded-xl">
+                <Pin className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                <p className="text-slate-400">No pinned projects yet.</p>
+                <p className="text-sm text-slate-400 mt-1">Pin projects from the Dashboard for quick access.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {projects.filter(p => p.isPinned).map(project => (
+                  <AppCard
+                    key={project.id}
+                    project={project}
+                    onClick={setSelectedProject}
+                    onTogglePin={togglePin}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         ) : (
           /* Dashboard View */
           <>
@@ -138,51 +167,7 @@ export default function App() {
               </div>
 
               {/* Sidebar: Event Log */}
-              <div className="hidden lg:block space-y-6">
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden sticky top-24">
-                  <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <ScrollText className="w-4 h-4 text-slate-500" />
-                      <h3 className="font-semibold text-slate-900 text-sm">Event Log</h3>
-                    </div>
-                    <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-mono">LIVE</span>
-                  </div>
-                  <div className="divide-y divide-slate-100 max-h-[600px] overflow-y-auto custom-scrollbar">
-                    {globalActivity.map((activity, i) => (
-                      <div key={i} className="p-4 hover:bg-slate-50 transition-colors group">
-                        <div className="flex items-start gap-3">
-                          <div className="mt-1">
-                            {activity.type === 'deployment' && <CheckCircle className="w-3.5 h-3.5 text-green-500" />}
-                            {activity.type === 'commit' && <GitCommit className="w-3.5 h-3.5 text-slate-400" />}
-                            {!activity.type && <Loader2 className="w-3.5 h-3.5 text-blue-500 animate-spin" />}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex justify-between items-start">
-                              <p className="text-xs font-bold text-slate-700 truncate group-hover:text-indigo-600 transition-colors cursor-pointer">
-                                {activity.projectName || 'Unknown Project'}
-                              </p>
-                              <span className="text-[10px] text-slate-400 whitespace-nowrap ml-2">
-                                {new Date(activity.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                              </span>
-                            </div>
-                            <p className="text-xs text-slate-500 truncate mt-0.5">{activity.title}</p>
-                            {activity.url && (
-                              <a
-                                href={activity.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-[10px] text-indigo-600 font-mono underline"
-                              >
-                                Link
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                 </div>
-                </div>
-              </div>
+              <Sidebar activity={globalActivity} />
 
             </div>
           </>
