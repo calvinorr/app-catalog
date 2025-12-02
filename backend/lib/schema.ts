@@ -9,6 +9,7 @@ export const projects = sqliteTable(
     path: text('path').notNull(),
     repoSlug: text('repo_slug'),
     vercelProject: text('vercel_project'),
+    vercelUrl: text('vercel_url'), // Actual deployment URL from Vercel
     status: text('status', { enum: ['active', 'redundant'] }).notNull().default('active'),
     stage: text('stage', { enum: ['final', 'beta', 'alpha', 'indev'] }).default('indev'),
     source: text('source', { enum: ['scanner', 'github'] }).default('scanner'),

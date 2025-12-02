@@ -1,0 +1,1 @@
+ALTER TABLE `projects` ADD `vercel_url` text;

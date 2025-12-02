@@ -118,6 +118,7 @@ export async function POST(request: Request) {
           .update(projects)
           .set({
             vercelProject: vercelProject.id,
+            vercelUrl: deploymentUrl,
             repoSlug: repoSlug || existing.repoSlug,
             lastDeploymentAt,
             updatedAt: now
@@ -139,6 +140,7 @@ export async function POST(request: Request) {
             path: placeholderPath,
             repoSlug: repoSlug,
             vercelProject: vercelProject.id,
+            vercelUrl: deploymentUrl,
             status: 'active',
             lastDeploymentAt,
             createdAt: now,
