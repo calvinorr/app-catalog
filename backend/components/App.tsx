@@ -227,7 +227,7 @@ export default function App() {
       />
 
       {/* Main Content Area - adjusted for sidebar */}
-      <div className="ml-48">
+      <div className="ml-64">
         <Navigation
           currentView={currentView}
           onSelectView={setCurrentView}

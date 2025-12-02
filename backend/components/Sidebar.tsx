@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { LayoutDashboard, CheckCircle, AlertCircle, Code2, FolderKanban, Database, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, CheckCircle, AlertCircle, Code2, FolderKanban, Database, ChevronDown, ChevronUp } from 'lucide-react';
 import { ProjectData, ProjectCategory } from '@/types';
 
 interface SidebarProps {
@@ -13,8 +13,59 @@ interface SidebarProps {
   onFilterChange: (type: 'overview' | 'status' | 'framework' | 'category' | 'database', value: string) => void;
 }
 
+interface AccordionSectionProps {
+  title: string;
+  icon: React.ReactNode;
+  count: number;
+  isOpen: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}
+
+function AccordionSection({ title, icon, count, isOpen, onToggle, children }: AccordionSectionProps) {
+  return (
+    <div className="border-b border-slate-700/50 last:border-b-0">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-800/50 transition-colors"
+      >
+        <div className="flex items-center gap-2 text-slate-300">
+          {icon}
+          <span className="text-xs font-semibold uppercase tracking-wider">{title}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full font-medium">
+            {count}
+          </span>
+          {isOpen ? (
+            <ChevronUp className="w-4 h-4 text-slate-500" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-slate-500" />
+          )}
+        </div>
+      </button>
+      <div className={`overflow-hidden transition-all duration-200 ${isOpen ? 'max-h-96' : 'max-h-0'}`}>
+        <div className="px-2 pb-2 space-y-1">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function Sidebar({ projects, activeFilter, onFilterChange }: SidebarProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // Accordion state - all sections start expanded
+  const [openSections, setOpenSections] = useState({
+    status: true,
+    framework: true,
+    category: true,
+    database: true,
+  });
+
+  const toggleSection = (section: keyof typeof openSections) => {
+    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
   // Calculate counts
   const counts = useMemo(() => {
     const statusCounts = {
@@ -61,218 +112,168 @@ export function Sidebar({ projects, activeFilter, onFilterChange }: SidebarProps
     return activeFilter.type === type && activeFilter.value === value;
   };
 
+  const FilterButton = ({
+    type,
+    value,
+    icon,
+    label,
+    count
+  }: {
+    type: 'status' | 'framework' | 'category' | 'database';
+    value: string;
+    icon: React.ReactNode;
+    label: string;
+    count: number;
+  }) => (
+    <button
+      onClick={() => onFilterChange(type, value)}
+      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
+        isActive(type, value)
+          ? 'bg-indigo-600 text-white'
+          : 'hover:bg-slate-800 text-slate-300'
+      }`}
+    >
+      <div className="flex items-center gap-2 min-w-0">
+        {icon}
+        <span className="truncate">{label}</span>
+      </div>
+      <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
+        isActive(type, value)
+          ? 'bg-indigo-500 text-white'
+          : 'bg-slate-700 text-slate-400'
+      }`}>
+        {count}
+      </span>
+    </button>
+  );
+
   return (
-    <div className={`fixed left-0 top-0 bottom-0 bg-slate-900 text-white overflow-y-auto transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-48'}`}>
+    <div className="fixed left-0 top-0 bottom-0 w-64 bg-slate-900 text-white overflow-y-auto border-r border-slate-700">
       {/* Logo / Title */}
-      <div className="p-4 border-b border-slate-700 flex items-center justify-between">
-        {!isCollapsed ? (
-          <div>
-            <h1 className="text-lg font-bold">DevDash</h1>
-            <p className="text-xs text-slate-400 mt-1">{counts.total} projects</p>
-          </div>
-        ) : (
-          <div className="mx-auto">
-            <span className="text-lg font-bold">D</span>
-          </div>
-        )}
+      <div className="p-5 border-b border-slate-700">
+        <h1 className="text-xl font-bold text-white">DevDash</h1>
+        <p className="text-sm text-slate-400 mt-1">{counts.total} projects</p>
+      </div>
+
+      {/* Overview Button */}
+      <div className="p-3 border-b border-slate-700/50">
         <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-1.5 hover:bg-slate-800 rounded-md transition-colors"
-          title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          onClick={() => onFilterChange('overview', 'all')}
+          className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+            isActive('overview', 'all')
+              ? 'bg-indigo-600 text-white'
+              : 'hover:bg-slate-800 text-slate-300'
+          }`}
         >
-          {isCollapsed ? (
-            <ChevronRight className="w-4 h-4 text-slate-400" />
-          ) : (
-            <ChevronLeft className="w-4 h-4 text-slate-400" />
-          )}
+          <div className="flex items-center gap-3">
+            <LayoutDashboard className="w-5 h-5" />
+            <span>All Projects</span>
+          </div>
+          <span className={`text-xs px-2 py-0.5 rounded-full ${
+            isActive('overview', 'all')
+              ? 'bg-indigo-500 text-white'
+              : 'bg-slate-700 text-slate-400'
+          }`}>
+            {counts.total}
+          </span>
         </button>
       </div>
 
-      {/* Navigation Sections */}
-      <nav className={`p-3 space-y-6 ${isCollapsed ? 'px-2' : ''}`}>
-        {/* Overview */}
-        <div>
-          <button
-            onClick={() => onFilterChange('overview', 'all')}
-            className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-md text-sm transition-colors ${
-              isActive('overview', 'all')
-                ? 'bg-indigo-600 text-white'
-                : 'hover:bg-slate-800 text-slate-300'
-            }`}
-            title={isCollapsed ? `Overview (${counts.total})` : undefined}
-          >
-            <div className="flex items-center gap-2">
-              <LayoutDashboard className="w-4 h-4 flex-shrink-0" />
-              {!isCollapsed && <span>Overview</span>}
-            </div>
-            {!isCollapsed && (
-              <span className="text-xs bg-slate-700 px-1.5 py-0.5 rounded">
-                {counts.total}
-              </span>
-            )}
-          </button>
-        </div>
+      {/* Accordion Sections */}
+      <nav className="flex flex-col">
+        {/* Status Section */}
+        <AccordionSection
+          title="Status"
+          icon={<CheckCircle className="w-4 h-4" />}
+          count={counts.status.active + counts.status.redundant}
+          isOpen={openSections.status}
+          onToggle={() => toggleSection('status')}
+        >
+          <FilterButton
+            type="status"
+            value="active"
+            icon={<CheckCircle className="w-4 h-4 text-green-400" />}
+            label="Active"
+            count={counts.status.active}
+          />
+          <FilterButton
+            type="status"
+            value="redundant"
+            icon={<AlertCircle className="w-4 h-4 text-slate-400" />}
+            label="Redundant"
+            count={counts.status.redundant}
+          />
+        </AccordionSection>
 
-        {/* By Status */}
-        <div>
-          {!isCollapsed && (
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">
-              Status
-            </h3>
-          )}
-          <div className="space-y-1">
-            <button
-              onClick={() => onFilterChange('status', 'active')}
-              className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-md text-sm transition-colors ${
-                isActive('status', 'active')
-                  ? 'bg-indigo-600 text-white'
-                  : 'hover:bg-slate-800 text-slate-300'
-              }`}
-              title={isCollapsed ? `Active (${counts.status.active})` : undefined}
-            >
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 flex-shrink-0" />
-                {!isCollapsed && <span>Active</span>}
-              </div>
-              {!isCollapsed && (
-                <span className="text-xs bg-slate-700 px-1.5 py-0.5 rounded">
-                  {counts.status.active}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => onFilterChange('status', 'redundant')}
-              className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-md text-sm transition-colors ${
-                isActive('status', 'redundant')
-                  ? 'bg-indigo-600 text-white'
-                  : 'hover:bg-slate-800 text-slate-300'
-              }`}
-              title={isCollapsed ? `Redundant (${counts.status.redundant})` : undefined}
-            >
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                {!isCollapsed && <span>Redundant</span>}
-              </div>
-              {!isCollapsed && (
-                <span className="text-xs bg-slate-700 px-1.5 py-0.5 rounded">
-                  {counts.status.redundant}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
+        {/* Framework Section */}
+        <AccordionSection
+          title="Framework"
+          icon={<Code2 className="w-4 h-4" />}
+          count={counts.frameworks.size}
+          isOpen={openSections.framework}
+          onToggle={() => toggleSection('framework')}
+        >
+          {Array.from(counts.frameworks.entries())
+            .sort(([, a], [, b]) => b - a)
+            .map(([framework, count]) => (
+              <FilterButton
+                key={framework}
+                type="framework"
+                value={framework}
+                icon={<Code2 className="w-4 h-4 text-blue-400" />}
+                label={framework}
+                count={count}
+              />
+            ))}
+        </AccordionSection>
 
-        {/* By Framework - only show top 5 when collapsed */}
-        <div>
-          {!isCollapsed && (
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">
-              Framework
-            </h3>
-          )}
-          <div className="space-y-1">
-            {Array.from(counts.frameworks.entries())
-              .sort(([, a], [, b]) => b - a)
-              .slice(0, isCollapsed ? 3 : undefined)
-              .map(([framework, count]) => (
-                <button
-                  key={framework}
-                  onClick={() => onFilterChange('framework', framework)}
-                  className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-md text-sm transition-colors ${
-                    isActive('framework', framework)
-                      ? 'bg-indigo-600 text-white'
-                      : 'hover:bg-slate-800 text-slate-300'
-                  }`}
-                  title={isCollapsed ? `${framework} (${count})` : undefined}
-                >
-                  <div className="flex items-center gap-2">
-                    <Code2 className="w-4 h-4 flex-shrink-0" />
-                    {!isCollapsed && <span className="truncate">{framework}</span>}
-                  </div>
-                  {!isCollapsed && (
-                    <span className="text-xs bg-slate-700 px-1.5 py-0.5 rounded">
-                      {count}
-                    </span>
-                  )}
-                </button>
-              ))}
-          </div>
-        </div>
+        {/* Category Section */}
+        <AccordionSection
+          title="Category"
+          icon={<FolderKanban className="w-4 h-4" />}
+          count={counts.categories.size}
+          isOpen={openSections.category}
+          onToggle={() => toggleSection('category')}
+        >
+          {Array.from(counts.categories.entries())
+            .sort(([, a], [, b]) => b - a)
+            .map(([category, count]) => (
+              <FilterButton
+                key={category}
+                type="category"
+                value={category}
+                icon={<FolderKanban className="w-4 h-4 text-purple-400" />}
+                label={category}
+                count={count}
+              />
+            ))}
+        </AccordionSection>
 
-        {/* By Category */}
-        <div>
-          {!isCollapsed && (
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">
-              Category
-            </h3>
-          )}
-          <div className="space-y-1">
-            {Array.from(counts.categories.entries())
-              .sort(([, a], [, b]) => b - a)
-              .slice(0, isCollapsed ? 3 : undefined)
-              .map(([category, count]) => (
-                <button
-                  key={category}
-                  onClick={() => onFilterChange('category', category)}
-                  className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-md text-sm transition-colors ${
-                    isActive('category', category)
-                      ? 'bg-indigo-600 text-white'
-                      : 'hover:bg-slate-800 text-slate-300'
-                  }`}
-                  title={isCollapsed ? `${category} (${count})` : undefined}
-                >
-                  <div className="flex items-center gap-2">
-                    <FolderKanban className="w-4 h-4 flex-shrink-0" />
-                    {!isCollapsed && <span className="truncate">{category}</span>}
-                  </div>
-                  {!isCollapsed && (
-                    <span className="text-xs bg-slate-700 px-1.5 py-0.5 rounded">
-                      {count}
-                    </span>
-                  )}
-                </button>
-              ))}
-          </div>
-        </div>
-
-        {/* By Database */}
-        <div>
-          {!isCollapsed && (
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-3">
-              Database
-            </h3>
-          )}
-          <div className="space-y-1">
-            {Array.from(counts.databases.entries())
-              .sort(([a, countA], [b, countB]) => {
-                if (a === 'No Database') return 1;
-                if (b === 'No Database') return -1;
-                return countB - countA;
-              })
-              .slice(0, isCollapsed ? 3 : undefined)
-              .map(([database, count]) => (
-                <button
-                  key={database}
-                  onClick={() => onFilterChange('database', database)}
-                  className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-md text-sm transition-colors ${
-                    isActive('database', database)
-                      ? 'bg-indigo-600 text-white'
-                      : 'hover:bg-slate-800 text-slate-300'
-                  }`}
-                  title={isCollapsed ? `${database} (${count})` : undefined}
-                >
-                  <div className="flex items-center gap-2">
-                    <Database className="w-4 h-4 flex-shrink-0" />
-                    {!isCollapsed && <span className="truncate">{database}</span>}
-                  </div>
-                  {!isCollapsed && (
-                    <span className="text-xs bg-slate-700 px-1.5 py-0.5 rounded">
-                      {count}
-                    </span>
-                  )}
-                </button>
-              ))}
-          </div>
-        </div>
+        {/* Database Section */}
+        <AccordionSection
+          title="Database"
+          icon={<Database className="w-4 h-4" />}
+          count={counts.databases.size}
+          isOpen={openSections.database}
+          onToggle={() => toggleSection('database')}
+        >
+          {Array.from(counts.databases.entries())
+            .sort(([a, countA], [b, countB]) => {
+              if (a === 'No Database') return 1;
+              if (b === 'No Database') return -1;
+              return countB - countA;
+            })
+            .map(([database, count]) => (
+              <FilterButton
+                key={database}
+                type="database"
+                value={database}
+                icon={<Database className="w-4 h-4 text-amber-400" />}
+                label={database}
+                count={count}
+              />
+            ))}
+        </AccordionSection>
       </nav>
     </div>
   );
