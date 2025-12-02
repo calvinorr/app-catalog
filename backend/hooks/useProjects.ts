@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ProjectData, ProjectStatus, ProjectStage } from '@/types';
-import { fetchProjects, updateProjectStatus, updateProjectStage, toggleProjectPin } from '@/services/projectService';
+import { fetchProjects, updateProjectStatus, updateProjectStage, toggleProjectPin, updateDisplayName as updateDisplayNameApi } from '@/services/projectService';
 
 interface UseProjectsResult {
   projects: ProjectData[];
@@ -10,6 +10,7 @@ interface UseProjectsResult {
   toggleStatus: (id: string) => Promise<void>;
   updateStage: (id: string, stage: ProjectStage) => Promise<void>;
   togglePin: (id: string) => Promise<void>;
+  updateDisplayName: (id: string, displayName: string) => Promise<void>;
 }
 
 export function useProjects(): UseProjectsResult {
@@ -97,5 +98,28 @@ export function useProjects(): UseProjectsResult {
     }
   };
 
-  return { projects, loading, error, setProjects, toggleStatus, updateStage, togglePin };
+  const updateDisplayName = async (id: string, displayName: string) => {
+    const project = projects.find((p) => p.id === id);
+    if (!project) return;
+    const prevDisplayName = project.displayName;
+    // Optimistically update UI
+    setProjects((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, displayName: displayName || null } : p))
+    );
+    try {
+      const newDisplayName = await updateDisplayNameApi(id, displayName);
+      if (newDisplayName !== undefined) {
+        setProjects((prev) =>
+          prev.map((p) => (p.id === id ? { ...p, displayName: newDisplayName } : p))
+        );
+      }
+    } catch (err) {
+      console.error('Failed to update display name; reverting.', err);
+      setProjects((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, displayName: prevDisplayName } : p))
+      );
+    }
+  };
+
+  return { projects, loading, error, setProjects, toggleStatus, updateStage, togglePin, updateDisplayName };
 }

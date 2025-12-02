@@ -18,7 +18,7 @@ import { useProjects } from '@/hooks/useProjects';
 import { useActivity } from '@/hooks/useActivity';
 
 export default function App() {
-  const { projects, loading, error, toggleStatus, updateStage, togglePin } = useProjects();
+  const { projects, loading, error, toggleStatus, updateStage, togglePin, updateDisplayName } = useProjects();
   const [currentView, setCurrentView] = useState<ViewOption>('dashboard');
   const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>(ProjectCategory.All);
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
@@ -205,6 +205,13 @@ export default function App() {
       if (updated) {
         setSelectedProject({ ...updated, isPinned: !updated.isPinned });
       }
+    }
+  };
+
+  const handleDisplayNameChange = (projectId: string, displayName: string) => {
+    updateDisplayName(projectId, displayName);
+    if (selectedProject?.id === projectId) {
+      setSelectedProject({ ...selectedProject, displayName: displayName || null });
     }
   };
 
@@ -407,6 +414,7 @@ export default function App() {
           onToggleStatus={toggleProjectStatus}
           onStageChange={handleStageChange}
           onTogglePin={handleTogglePin}
+          onDisplayNameChange={handleDisplayNameChange}
         />
       )}
     </div>

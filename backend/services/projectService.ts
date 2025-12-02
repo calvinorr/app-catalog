@@ -77,6 +77,7 @@ function transformProject(p: APIProject): ProjectData {
   return {
     id: p.id,
     name: p.name,
+    displayName: p.displayName || null,
     description: p.description || `Project at ${p.path}`,
     category: ProjectCategory.All, // No auto-inference, start blank
     status: p.status,
@@ -141,6 +142,22 @@ export async function toggleProjectPin(id: string) {
     return data.isPinned as boolean;
   } catch (err) {
     console.warn('Failed to parse pin response.', err);
+    return null;
+  }
+}
+
+export async function updateDisplayName(id: string, displayName: string) {
+  const res = await safeFetch(`${API_BASE}/projects/${id}/display-name`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ displayName })
+  });
+  if (!res) return null;
+  try {
+    const data = await res.json();
+    return data.displayName as string | null;
+  } catch (err) {
+    console.warn('Failed to parse display name response.', err);
     return null;
   }
 }

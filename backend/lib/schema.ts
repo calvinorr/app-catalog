@@ -5,6 +5,7 @@ export const projects = sqliteTable(
   {
     id: text('id').primaryKey(),
     name: text('name').notNull(),
+    displayName: text('display_name'), // User-friendly name (overrides ugly repo names)
     path: text('path').notNull(),
     repoSlug: text('repo_slug'),
     vercelProject: text('vercel_project'),

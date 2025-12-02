@@ -44,6 +44,7 @@ export interface ActivityPoint {
 export interface ProjectData {
   id: string;
   name: string;
+  displayName?: string | null; // User-friendly override for ugly repo names
   description: string;
   category: ProjectCategory;
   status: ProjectStatus;

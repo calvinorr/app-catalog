@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { X, ExternalLink, Github, Terminal, Database, Server, Clock, GitCommit, CheckCircle, XCircle, AlertCircle, TrendingUp, Layers, ChevronDown, Pin } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, ExternalLink, Github, Terminal, Database, Server, Clock, GitCommit, CheckCircle, XCircle, AlertCircle, TrendingUp, Layers, ChevronDown, Pin, Pencil, Check } from 'lucide-react';
 import { ProjectData, DeploymentStatus, ProjectStage } from '@/types';
 import { ActivityHeatmap } from '@/components/ActivityHeatmap';
 
@@ -10,6 +10,7 @@ interface ProjectDetailsProps {
   onToggleStatus: (id: string) => void;
   onStageChange?: (id: string, stage: ProjectStage) => void;
   onTogglePin?: (id: string) => void;
+  onDisplayNameChange?: (id: string, displayName: string) => void;
 }
 
 const StatusIcon = ({ status }: { status: DeploymentStatus }) => {
@@ -28,7 +29,15 @@ const STAGE_OPTIONS: { value: ProjectStage; label: string; color: string }[] = [
   { value: 'indev', label: 'In Dev', color: 'bg-slate-500/20 text-slate-400 border-slate-500/30' },
 ];
 
-export const AppDetails: React.FC<ProjectDetailsProps> = ({ app: project, onClose, onToggleStatus, onStageChange, onTogglePin }) => {
+export const AppDetails: React.FC<ProjectDetailsProps> = ({ app: project, onClose, onToggleStatus, onStageChange, onTogglePin, onDisplayNameChange }) => {
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedDisplayName, setEditedDisplayName] = useState(project.displayName || '');
+
+  const handleSaveDisplayName = () => {
+    onDisplayNameChange?.(project.id, editedDisplayName);
+    setIsEditingName(false);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       <div
@@ -41,7 +50,40 @@ export const AppDetails: React.FC<ProjectDetailsProps> = ({ app: project, onClos
         <div className="bg-slate-800 border-b border-slate-700 px-8 py-6 flex justify-between items-start">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h2 className="text-2xl font-bold text-slate-100">{project.name}</h2>
+              {isEditingName ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={editedDisplayName}
+                    onChange={(e) => setEditedDisplayName(e.target.value)}
+                    placeholder={project.name}
+                    className="text-2xl font-bold text-slate-100 bg-slate-700 border border-slate-600 rounded px-2 py-1 focus:outline-none focus:border-indigo-500"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSaveDisplayName();
+                      if (e.key === 'Escape') setIsEditingName(false);
+                    }}
+                  />
+                  <button
+                    onClick={handleSaveDisplayName}
+                    className="p-1 hover:bg-slate-600 rounded transition-colors"
+                    title="Save"
+                  >
+                    <Check className="w-5 h-5 text-emerald-400" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <h2 className="text-2xl font-bold text-slate-100">{project.displayName || project.name}</h2>
+                  <button
+                    onClick={() => setIsEditingName(true)}
+                    className="p-1 hover:bg-slate-700 rounded transition-colors"
+                    title="Edit display name"
+                  >
+                    <Pencil className="w-4 h-4 text-slate-400" />
+                  </button>
+                </>
+              )}
               <span className="px-2.5 py-0.5 rounded-full bg-slate-700 text-slate-300 text-xs font-medium border border-slate-600">
                 {project.category}
               </span>
@@ -53,6 +95,9 @@ export const AppDetails: React.FC<ProjectDetailsProps> = ({ app: project, onClos
                 {project.status}
               </span>
             </div>
+            {project.displayName && (
+              <p className="text-xs text-slate-500 font-mono mb-1">{project.name}</p>
+            )}
             <p className="text-slate-400 max-w-2xl">{project.description}</p>
           </div>
           <div className="flex items-center gap-3">
