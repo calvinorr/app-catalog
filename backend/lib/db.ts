@@ -23,6 +23,6 @@ export const db = new Proxy({} as LibSQLDatabase<typeof schema>, {
     if (!dbInstance) {
       dbInstance = drizzle(getClient(), { schema });
     }
-    return (dbInstance as Record<string | symbol, unknown>)[prop];
+    return (dbInstance as unknown as Record<string | symbol, unknown>)[prop];
   }
 });
