@@ -51,7 +51,10 @@ export const AppDetails: React.FC<ProjectDetailsProps> = ({ app: project, onClos
         <div className="bg-white border-b border-slate-200 px-8 py-6 flex justify-between items-start">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h2 className="text-2xl font-bold text-slate-900">{project.name}</h2>
+              <h2 className="text-2xl font-bold text-slate-900">{project.displayName || project.name}</h2>
+              {project.repoSlug && (
+                <span className="text-sm text-slate-400 font-mono">{project.repoSlug}</span>
+              )}
               <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-medium border border-slate-200">
                 {project.category}
               </span>
