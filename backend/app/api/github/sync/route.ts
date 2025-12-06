@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { projects, techStackSnapshots } from '@/lib/schema';
-import { eq } from 'drizzle-orm';
+import { projects, techStackSnapshots, activityItems } from '@/lib/schema';
+import { eq, and, notInArray, like } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
 
@@ -368,11 +368,51 @@ export async function POST() {
       }
     }
 
+    // Cleanup: Remove projects that no longer exist on GitHub
+    // Build set of current GitHub paths
+    const currentGitHubPaths = repos.map(repo => `github:${repo.full_name}`);
+
+    // Find GitHub-sourced projects that are no longer in GitHub
+    const staleProjects = await db
+      .select({ id: projects.id, path: projects.path, name: projects.name })
+      .from(projects)
+      .where(
+        and(
+          eq(projects.source, 'github'),
+          notInArray(projects.path, currentGitHubPaths.length > 0 ? currentGitHubPaths : ['__none__'])
+        )
+      );
+
+    let deletedCount = 0;
+
+    // Delete stale projects and their related data
+    for (const staleProject of staleProjects) {
+      // Delete activity items first (foreign key constraint)
+      await db
+        .delete(activityItems)
+        .where(eq(activityItems.projectId, staleProject.id));
+
+      // Delete tech stack snapshots
+      await db
+        .delete(techStackSnapshots)
+        .where(eq(techStackSnapshots.projectId, staleProject.id));
+
+      // Delete the project
+      await db
+        .delete(projects)
+        .where(eq(projects.id, staleProject.id));
+
+      deletedCount++;
+      console.log(`Deleted stale project: ${staleProject.name} (${staleProject.path})`);
+    }
+
     return NextResponse.json({
       ok: true,
       total: repos.length,
       inserted: insertedCount,
-      updated: updatedCount
+      updated: updatedCount,
+      deleted: deletedCount,
+      deletedProjects: staleProjects.map(p => p.name)
     });
   } catch (error) {
     console.error('Error syncing GitHub repos:', error);
