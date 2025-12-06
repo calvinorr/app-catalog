@@ -14,19 +14,22 @@ export async function GET() {
   }
 
   try {
-    const items = await db.select().from(activityItems);
-
-    const withNames = await Promise.all(
-      items.map(async (item) => {
-        const proj = await db.select().from(projects).where(eq(projects.id, item.projectId)).limit(1);
-        return {
-          ...item,
-          projectName: proj[0]?.name
-        };
+    // Use LEFT JOIN to get project names efficiently (fixes N+1 query)
+    const results = await db
+      .select({
+        id: activityItems.id,
+        projectId: activityItems.projectId,
+        type: activityItems.type,
+        timestamp: activityItems.timestamp,
+        title: activityItems.title,
+        url: activityItems.url,
+        metadata: activityItems.metadata,
+        projectName: projects.name
       })
-    );
+      .from(activityItems)
+      .leftJoin(projects, eq(activityItems.projectId, projects.id));
 
-    return NextResponse.json({ activity: withNames });
+    return NextResponse.json({ activity: results });
   } catch (error) {
     console.error('Database error, falling back to mock data:', error);
     return NextResponse.json({ activity: MOCK_ACTIVITY, devMode: true, fallback: true });

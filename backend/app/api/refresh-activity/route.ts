@@ -57,68 +57,119 @@ async function fetchDeployments(vercelProject: string, count = 50): Promise<Verc
   return data.deployments || [];
 }
 
+// Process a single project's GitHub commits
+async function processGitHubCommits(project: { id: string; repoSlug: string | null }): Promise<number> {
+  if (!project.repoSlug) return 0;
+
+  try {
+    const commits = await fetchCommits(project.repoSlug, 100);
+    let count = 0;
+
+    // Insert commits in batches for better performance
+    for (const commit of commits) {
+      await db
+        .insert(activityItems)
+        .values({
+          id: `${project.id}-commit-${commit.sha.substring(0, 8)}`,
+          projectId: project.id,
+          type: 'commit',
+          timestamp: new Date(commit.commit.author.date),
+          title: commit.commit.message.split('\n')[0],
+          url: commit.html_url,
+          metadata: JSON.stringify({
+            sha: commit.sha,
+            author: commit.commit.author.name
+          })
+        })
+        .onConflictDoUpdate({
+          target: activityItems.id,
+          set: {
+            title: commit.commit.message.split('\n')[0],
+            timestamp: new Date(commit.commit.author.date),
+            url: commit.html_url,
+            metadata: JSON.stringify({
+              sha: commit.sha,
+              author: commit.commit.author.name
+            })
+          }
+        });
+      count++;
+    }
+    return count;
+  } catch (err) {
+    console.error('GitHub refresh failed for', project.repoSlug, err);
+    return 0;
+  }
+}
+
+// Process a single project's Vercel deployments
+async function processVercelDeployments(project: { id: string; vercelProject: string | null }): Promise<number> {
+  if (!project.vercelProject) return 0;
+
+  try {
+    const deployments = await fetchDeployments(project.vercelProject, 50);
+    let count = 0;
+
+    for (const deploy of deployments) {
+      await db
+        .insert(activityItems)
+        .values({
+          id: `${project.id}-deploy-${deploy.uid.substring(0, 8)}`,
+          projectId: project.id,
+          type: 'deployment',
+          timestamp: new Date(deploy.createdAt),
+          title: `Deployment ${deploy.state}`,
+          url: `https://${deploy.url}`,
+          metadata: JSON.stringify({
+            uid: deploy.uid,
+            state: deploy.state
+          })
+        })
+        .onConflictDoUpdate({
+          target: activityItems.id,
+          set: {
+            title: `Deployment ${deploy.state}`,
+            timestamp: new Date(deploy.createdAt),
+            url: `https://${deploy.url}`,
+            metadata: JSON.stringify({
+              uid: deploy.uid,
+              state: deploy.state
+            })
+          }
+        });
+      count++;
+    }
+    return count;
+  } catch (err) {
+    console.error('Vercel refresh failed for', project.vercelProject, err);
+    return 0;
+  }
+}
+
+// Process projects in parallel batches to avoid rate limits while being fast
+async function processBatch<T, R>(items: T[], batchSize: number, processor: (item: T) => Promise<R>): Promise<R[]> {
+  const results: R[] = [];
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    const batchResults = await Promise.all(batch.map(processor));
+    results.push(...batchResults);
+  }
+  return results;
+}
+
 export async function POST() {
   const list = await db.select().from(projects);
-  let updated = 0;
   const now = new Date();
 
-  for (const project of list) {
-    // GitHub - fetch last 100 commits
-    if (project.repoSlug) {
-      try {
-        const commits = await fetchCommits(project.repoSlug, 100);
-        for (const commit of commits) {
-          // Use SHA in ID to allow multiple commits per project
-          await db
-            .insert(activityItems)
-            .values({
-              id: `${project.id}-commit-${commit.sha.substring(0, 8)}`,
-              projectId: project.id,
-              type: 'commit',
-              timestamp: new Date(commit.commit.author.date),
-              title: commit.commit.message.split('\n')[0], // First line only
-              url: commit.html_url,
-              metadata: JSON.stringify({
-                sha: commit.sha,
-                author: commit.commit.author.name
-              })
-            })
-            .onConflictDoNothing(); // Preserve existing, don't update
-          updated++;
-        }
-      } catch (err) {
-        console.error('GitHub refresh failed for', project.repoSlug, err);
-      }
-    }
+  // Process GitHub and Vercel in parallel, with batching within each
+  const BATCH_SIZE = 5; // Process 5 projects concurrently to avoid rate limits
 
-    // Vercel - fetch last 50 deployments
-    if (project.vercelProject) {
-      try {
-        const deployments = await fetchDeployments(project.vercelProject, 50);
-        for (const deploy of deployments) {
-          // Use UID in ID to allow multiple deployments per project
-          await db
-            .insert(activityItems)
-            .values({
-              id: `${project.id}-deploy-${deploy.uid.substring(0, 8)}`,
-              projectId: project.id,
-              type: 'deployment',
-              timestamp: new Date(deploy.createdAt),
-              title: `Deployment ${deploy.state}`,
-              url: `https://${deploy.url}`,
-              metadata: JSON.stringify({
-                uid: deploy.uid,
-                state: deploy.state
-              })
-            })
-            .onConflictDoNothing(); // Preserve existing
-          updated++;
-        }
-      } catch (err) {
-        console.error('Vercel refresh failed for', project.vercelProject, err);
-      }
-    }
-  }
+  const [githubCounts, vercelCounts] = await Promise.all([
+    processBatch(list, BATCH_SIZE, processGitHubCommits),
+    processBatch(list, BATCH_SIZE, processVercelDeployments)
+  ]);
+
+  const updated = [...githubCounts, ...vercelCounts].reduce((a, b) => a + b, 0);
 
   return NextResponse.json({ ok: true, updated, runAt: now.toISOString() });
 }

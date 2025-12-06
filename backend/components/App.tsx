@@ -218,11 +218,15 @@ export default function App() {
   const handleRefreshActivity = async () => {
     setIsRefreshing(true);
     try {
-      // First sync Vercel projects to get real URLs (fast)
-      await fetch('/api/vercel/sync', { method: 'POST' });
+      // Sync both GitHub and Vercel projects in parallel (fast metadata updates)
+      await Promise.all([
+        fetch('/api/github/sync', { method: 'POST' }),
+        fetch('/api/vercel/sync', { method: 'POST' })
+      ]);
+
       // Then refresh activity data (can be slow, use AbortController for timeout)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
       try {
         await fetch('/api/refresh-activity', {
           method: 'POST',
@@ -230,7 +234,7 @@ export default function App() {
         });
       } catch (e) {
         // Timeout is OK - activity refresh can take a while
-        console.log('Activity refresh timed out or failed - Vercel URLs still synced');
+        console.log('Activity refresh timed out or failed - project metadata still synced');
       } finally {
         clearTimeout(timeoutId);
       }
