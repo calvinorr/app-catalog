@@ -112,11 +112,14 @@ export const AppCard: React.FC<ProjectCardProps> = ({ project, onClick, onToggle
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="font-bold text-slate-900 flex items-center gap-2">
-              {project.name}
+              {project.displayName || project.name}
               {project.vercelUrl && <ArrowUpRight className="w-3 h-3 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />}
             </h3>
           </div>
-          <p className="text-xs text-slate-500 font-mono mt-0.5">{project.category}</p>
+          {project.repoSlug && (
+            <p className="text-xs text-slate-400 font-mono mt-0.5">{project.repoSlug}</p>
+          )}
+          <p className="text-xs text-slate-500 mt-0.5">{project.category}</p>
 
           {/* Last commit preview */}
           {project.lastDeployment?.commitMessage && (

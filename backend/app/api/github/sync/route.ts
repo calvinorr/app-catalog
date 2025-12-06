@@ -163,6 +163,32 @@ interface GitHubRepo {
   pushed_at: string;
 }
 
+// Generic repo names that should use full_name for display
+const GENERIC_REPO_NAMES = ['frontend', 'backend', 'app', 'web', 'client', 'server', 'api', 'ui', 'site', 'website', 'project', 'demo', 'test', 'src'];
+
+function humanizeRepoName(name: string): string {
+  return name
+    .replace(/[-_]/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function generateDisplayName(repo: GitHubRepo): string | null {
+  const lowerName = repo.name.toLowerCase();
+
+  // If repo name is generic, use full_name to generate a better display name
+  if (GENERIC_REPO_NAMES.includes(lowerName)) {
+    // full_name is "owner/repo-name", extract repo-name and humanize it
+    const repoNameFromSlug = repo.full_name.split('/')[1];
+    if (repoNameFromSlug && repoNameFromSlug.toLowerCase() !== lowerName) {
+      return humanizeRepoName(repoNameFromSlug);
+    }
+    // If still generic, include owner context
+    return humanizeRepoName(repo.full_name.replace('/', ' - '));
+  }
+
+  return null; // Use default name
+}
+
 async function fetchAllRepos(token: string): Promise<GitHubRepo[]> {
   const allRepos: GitHubRepo[] = [];
   let page = 1;
@@ -235,11 +261,15 @@ export async function POST() {
       // Parse pushed_at as lastCommitAt timestamp
       const lastCommitAt = repo.pushed_at ? new Date(repo.pushed_at) : null;
 
+      // Generate a user-friendly display name for generic repo names
+      const displayName = generateDisplayName(repo);
+
       await db
         .insert(projects)
         .values({
           id,
           name: repo.name,
+          displayName,
           path,
           repoSlug: repo.full_name,
           vercelProject: null,
@@ -256,6 +286,7 @@ export async function POST() {
           target: projects.path,
           set: {
             name: repo.name,
+            displayName,
             repoSlug: repo.full_name,
             status: repo.archived ? 'redundant' : 'active',
             description: repo.description,

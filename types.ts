@@ -44,6 +44,7 @@ export interface ActivityPoint {
 export interface ProjectData {
   id: string;
   name: string;
+  displayName?: string | null;
   description: string;
   category: ProjectCategory | string;
   status: ProjectStatus;
